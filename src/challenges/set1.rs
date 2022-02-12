@@ -1,9 +1,9 @@
 #[allow(dead_code)]
 
+/// Convert hex to base64
 mod challenge1
 {
     use anyhow::Result;
-    use std::str;
 
     fn hex_to_base64(arg: &str) -> Result<String>
     {
@@ -24,6 +24,38 @@ mod challenge1
             let base64_str = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
 
             assert_eq!(hex_to_base64(hex_str).unwrap(), base64_str);
+        }
+    }
+}
+
+/// Fixed XOR
+mod challenge2
+{
+    use anyhow::Result;
+
+    fn xor_hex_str(left: &str, right: &str) -> Result<String>
+    {
+        let iter: Vec<u8> = hex::decode(left)?
+            .iter()
+            .zip(hex::decode(right)?.iter())
+            .map(|(r, h)| r ^ h)
+            .collect();
+
+        Ok(hex::encode(String::from_utf8_lossy(&iter).into_owned()))
+    }
+
+    #[cfg(test)]
+    mod tests
+    {
+        use super::*;
+
+        #[test]
+        fn test_challenge()
+        {
+            let left = "1c0111001f010100061a024b53535009181c";
+            let right = "686974207468652062756c6c277320657965";
+
+            assert_eq!(xor_hex_str(left, right).unwrap(), "746865206b696420646f6e277420706c6179");
         }
     }
 }
