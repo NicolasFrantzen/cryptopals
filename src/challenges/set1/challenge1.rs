@@ -1,7 +1,5 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 /// Convert hex to base64
+/// https://cryptopals.com/sets/1/challenges/1
 
 use anyhow::Result;
 

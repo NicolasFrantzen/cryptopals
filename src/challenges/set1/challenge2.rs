@@ -1,9 +1,7 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
+/// Fixed XOR
+/// https://cryptopals.com/sets/1/challenges/2
 
 use anyhow::Result;
-
-/// Fixed XOR
 
 fn xor_hex_str(left: &str, right: &str) -> Result<String>
 {

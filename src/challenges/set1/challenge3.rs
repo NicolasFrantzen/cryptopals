@@ -1,6 +1,5 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
+/// Single-byte XOR cipher
+/// https://cryptopals.com/sets/1/challenges/3
 
 use std::{io::{BufReader, BufRead}, fs::File};
 use std::collections::HashMap;
@@ -88,8 +87,16 @@ fn break_cipher(cipher: &str) -> Option<char>
 
     if let Some(max_score_key) = max_score_key
     {
-        let deciphered_msg = decipher(cipher, &max_score_key);
-        println!("The deciphered phrase seems to be: \"{}\". With a score of {}", deciphered_msg.unwrap(), key_score[&max_score_key]);
+        let max_score = key_score[&max_score_key];
+
+        if let Ok(deciphered_msg) = decipher(cipher, &max_score_key)
+        {
+            println!("The deciphered phrase seems to be: \"{}\". With a score of {}", deciphered_msg, max_score);
+        }
+    }
+    else
+    {
+        println!("Unable to break the cipher.");
     }
 
     max_score_key
