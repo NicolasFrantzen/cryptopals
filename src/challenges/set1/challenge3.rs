@@ -20,7 +20,7 @@ impl WordScorer
 {
     fn new() -> Self
     {
-        let file = File::open("/usr/share/dict/american-english").expect("Failed to open dictionary file.");
+        let file = File::open("dictionary/american-english").expect("Failed to open dictionary file.");
         let buf = BufReader::new(file);
         let lines: Vec<String> = buf.lines()
             .map(|l| l.expect("Failed to parse line"))
@@ -46,7 +46,7 @@ impl WordScorer
 
     fn get_score(&self, pattern: &str) -> Result<u16>
     {
-        let score = pattern.split(" ")
+        let score = pattern.split(' ')
             .map(|w| self.get_word_score(w))
             .sum::<Result<u16,_>>()?;
 
@@ -75,17 +75,15 @@ fn break_cipher(cipher: &str) -> Option<char>
 
     for c in 'A'..='z'
     {
-        match decipher(cipher, &c) {
-            Ok(deciphered) => {
-                let score = dict.get_score(&deciphered).unwrap();
-                key_score.insert(c, score);
-            },
-            Err(_) => (),
+        if let Ok(deciphered) = decipher(cipher, &c)
+        {
+            let score = dict.get_score(&deciphered).unwrap();
+            key_score.insert(c, score);
         }
     }
 
     let max_score_key = key_score.iter()
-        .max_by(|a, b| a.1.cmp(&b.1))
+        .max_by(|a, b| a.1.cmp(b.1))
         .map(|(k, _v)| *k);
 
     if let Some(max_score_key) = max_score_key
