@@ -3,7 +3,7 @@
 
 use std::{io::{BufReader, BufRead}, fs::File};
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use anyhow::{Result, anyhow};
 
@@ -15,6 +15,7 @@ pub struct WordScorer
 {
     set: Set<Vec<u8>>,
 }
+
 
 impl WordScorer
 {
@@ -66,7 +67,8 @@ fn decipher(cipher: &str, key: u8) -> Result<String>
     Ok(String::from_utf8_lossy(&iter).into_owned())
 }
 
-pub fn break_cipher(dict: Rc<WordScorer>, cipher: &str) -> Result<Deciphered>
+
+pub fn break_cipher(dict: Arc<WordScorer>, cipher: &str) -> Result<Deciphered>
 {
     let mut key_score = HashMap::new();
 
@@ -129,7 +131,7 @@ mod tests
     #[test]
     fn test_challenge3()
     {
-        let dict = Rc::new(WordScorer::new());
+        let dict = Arc::new(WordScorer::new());
 
         let cipher = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
 
