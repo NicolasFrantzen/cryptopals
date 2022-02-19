@@ -1,5 +1,5 @@
-/// Fixed XOR
-/// https://cryptopals.com/sets/1/challenges/2
+//! Fixed XOR
+//! <https://cryptopals.com/sets/1/challenges/2>
 
 use anyhow::Result;
 
@@ -20,7 +20,7 @@ mod tests
     use super::*;
 
     #[test]
-    fn test_challenge()
+    fn test_challenge2()
     {
         let left = "1c0111001f010100061a024b53535009181c";
         let right = "686974207468652062756c6c277320657965";

@@ -1,23 +1,24 @@
-/// Single-byte XOR cipher
-/// https://cryptopals.com/sets/1/challenges/3
+//! Single-byte XOR cipher
+//! <https://cryptopals.com/sets/1/challenges/3>
 
 use std::{io::{BufReader, BufRead}, fs::File};
 use std::collections::HashMap;
+use std::rc::Rc;
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 
 use fst::{IntoStreamer, Set};
 use fst::automaton::Levenshtein;
 
 
-struct WordScorer
+pub struct WordScorer
 {
     set: Set<Vec<u8>>,
 }
 
 impl WordScorer
 {
-    fn new() -> Self
+    pub fn new() -> Self
     {
         let file = File::open("dictionary/american-english").expect("Failed to open dictionary file.");
         let buf = BufReader::new(file);
@@ -53,31 +54,31 @@ impl WordScorer
     }
 }
 
-fn decipher(cipher: &str, key: &char) -> Result<String>
-{
-    let mut key_arr = [0, 1];
-    key.encode_utf8(&mut key_arr);
-    let key = key_arr[0];
 
+fn decipher(cipher: &str, key: u8) -> Result<String>
+{
     let iter: Vec<u8> = hex::decode(cipher)?
         .iter()
+        .cloned()
         .map(|c| c ^ key )
         .collect();
 
     Ok(String::from_utf8_lossy(&iter).into_owned())
 }
 
-fn break_cipher(cipher: &str) -> Option<char>
+pub fn break_cipher(dict: Rc<WordScorer>, cipher: &str) -> Result<Deciphered>
 {
-    let dict = WordScorer::new();
     let mut key_score = HashMap::new();
 
-    for c in 'A'..='z'
+    for c in 32..=127u8 // All printable chars
     {
-        if let Ok(deciphered) = decipher(cipher, &c)
+        if let Ok(deciphered) = decipher(cipher, c)
         {
-            let score = dict.get_score(&deciphered).unwrap();
-            key_score.insert(c, score);
+            if deciphered.is_ascii()
+            {
+                let score = dict.get_score(&deciphered).unwrap();
+                key_score.insert(c as char, score);
+            }
         }
     }
 
@@ -85,21 +86,38 @@ fn break_cipher(cipher: &str) -> Option<char>
         .max_by(|a, b| a.1.cmp(b.1))
         .map(|(k, _v)| *k);
 
+
     if let Some(max_score_key) = max_score_key
     {
         let max_score = key_score[&max_score_key];
 
-        if let Ok(deciphered_msg) = decipher(cipher, &max_score_key)
+        if let Ok(deciphered_msg) = decipher(cipher, max_score_key as u8)
         {
-            println!("The deciphered phrase seems to be: \"{}\". With a score of {}", deciphered_msg, max_score);
+            if max_score > 0
+            {
+                return Ok(
+                    Deciphered {
+                        key: max_score_key,
+                        score: max_score,
+                        cipher: String::from(cipher),
+                        deciphered: deciphered_msg
+                    }
+                );
+            }
         }
     }
-    else
-    {
-        println!("Unable to break the cipher.");
-    }
 
-    max_score_key
+    Err(anyhow!("Unable to break the cipher."))
+}
+
+
+#[derive(Debug, PartialEq)]
+pub struct Deciphered
+{
+    pub key: char,
+    pub score: u16,
+    pub cipher: String,
+    pub deciphered: String,
 }
 
 
@@ -109,10 +127,21 @@ mod tests
     use super::*;
 
     #[test]
-    fn test_challenge()
+    fn test_challenge3()
     {
-        // We are looking for the message "Cooking MC's like a pound of bacon"
+        let dict = Rc::new(WordScorer::new());
+
         let cipher = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
-        assert_eq!(break_cipher(cipher), Some('X'));
+
+        let expected_deciphered = Deciphered {
+            key: 'X',
+            score: 136,
+            cipher: String::from(cipher),
+            deciphered: String::from("Cooking MC's like a pound of bacon"),
+        };
+        let deciphered = break_cipher(dict.clone(), cipher).unwrap();
+
+        assert_eq!(deciphered, expected_deciphered);
+        println!("{:?}",  deciphered);
     }
 }
