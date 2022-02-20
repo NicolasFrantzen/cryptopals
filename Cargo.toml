@@ -11,3 +11,4 @@ hex = "0.4.3"
 fst = {version = "0.4.7", features = ["levenshtein"]}
 threadpool = "1.8.1"
 indoc = "1.0.4"
+hamming = "0.1.3"
