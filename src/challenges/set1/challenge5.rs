@@ -1,24 +1,36 @@
 //! Implement repeating-key XOR
 //! <https://cryptopals.com/sets/1/challenges/5>
 
+use anyhow::Result;
 
-struct RepeatingKeyXor;
+pub struct RepeatingKeyXor;
 impl RepeatingKeyXor
 {
-    fn encrypt(plaintext: &str, key: &str) -> String
+    pub fn encrypt(plaintext: &str, key: &str) -> String
     {
-        let num_repeat_to_fit: usize = (plaintext.len() as f32 / key.len() as f32).ceil() as usize;
+        hex::encode(Self::xor_bytes(plaintext.as_bytes(), key))
+    }
+
+    /*fn decrypt(cipher: &str, key: &str) -> Result<String>
+    {
+        let bytes = hex::decode(cipher)?;
+        let xored_bytes = Self::xor_bytes(bytes, key);
+
+        String::from_utf8_lossy().into_owned()
+    }*/
+
+    pub fn xor_bytes(buffer: &[u8], key: &str) -> Vec<u8>
+    {
+        let num_repeat_to_fit: usize = (buffer.len() as f32 / key.len() as f32).ceil() as usize;
         let repeated_key = key.repeat(num_repeat_to_fit);
 
-        let encrypted_bytes: Vec<u8> = plaintext.bytes()
-            .into_iter()
+        buffer.into_iter()
             .zip(repeated_key.bytes().into_iter())
             .map(|(r, h)| r ^ h)
-            .collect();
-
-        hex::encode(encrypted_bytes)
+            .collect::<Vec<_>>()
     }
 }
+
 
 #[cfg(test)]
 mod tests

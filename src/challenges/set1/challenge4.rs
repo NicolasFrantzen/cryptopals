@@ -68,7 +68,7 @@ mod tests
 {
     use super::*;
 
-    #[test] #[ignore]
+    #[test]
     fn test_challenge4()
     {
         let expected_deciphered = Deciphered {

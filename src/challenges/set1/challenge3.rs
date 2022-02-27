@@ -29,7 +29,9 @@ impl WordScorer
 
         let set = Set::from_iter(lines).unwrap();
 
-        Self{set}
+        Self {
+            set
+        }
     }
 
     fn get_word_score(&self, word: &str) -> Result<u16>
@@ -84,6 +86,8 @@ pub fn break_cipher(dict: Arc<WordScorer>, cipher: &str) -> Result<Deciphered>
         }
     }
 
+    //println!("Keyscores: {:?}", key_score);
+
     let max_score_key = key_score.iter()
         .max_by(|a, b| a.1.cmp(b.1))
         .map(|(k, _v)| *k);
@@ -97,6 +101,8 @@ pub fn break_cipher(dict: Arc<WordScorer>, cipher: &str) -> Result<Deciphered>
         {
             if max_score > 0
             {
+                //println!("Key became: {:?}", max_score_key);
+
                 return Ok(
                     Deciphered {
                         key: max_score_key,

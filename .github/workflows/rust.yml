@@ -21,4 +21,4 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Run tests (in release)
-      run: cargo test --verbose --release -- --show-output --include-ignored
+      run: cargo test --verbose --release -- --show-output
