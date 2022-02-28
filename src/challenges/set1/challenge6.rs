@@ -4,7 +4,9 @@
 use anyhow::Result;
 use itertools::Itertools;
 use ordered_float::OrderedFloat;
+use threadpool::ThreadPool;
 
+use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::fs::read_to_string;
 
@@ -111,11 +113,29 @@ impl RepeatingKeyXorBreaker
 
     fn break_blocks(&self) -> String
     {
-        let dict = Arc::new(WordScorer::new());
+        let (tx, rx) = channel();
+        let pool = ThreadPool::new(8);
 
-        self.get_transposed_blocks()
-            .iter()
-            .map(|b| break_cipher(dict.clone(), b).unwrap().key)
+        let dict = Arc::new(WordScorer::new());
+        let blocks = self.get_transposed_blocks();
+        let blocks_num = blocks.len();
+
+        for (i, block) in blocks.into_iter().enumerate()
+        {
+            let dict = dict.clone();
+            let tx = tx.clone();
+
+            pool.execute(move|| {
+                let deciphered = break_cipher(dict, &block);
+
+                tx.send((i, deciphered)).expect("Unable to send wtf");
+            });
+        }
+
+        rx.iter()
+            .take(blocks_num)
+            .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
+            .map(|k| k.1.unwrap().key)
             .collect::<String>()
     }
 

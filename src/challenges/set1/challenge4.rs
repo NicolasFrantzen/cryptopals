@@ -3,8 +3,8 @@
 
 use anyhow::{Result, anyhow};
 use threadpool::ThreadPool;
-use std::sync::mpsc::channel;
 
+use std::sync::mpsc::channel;
 use std::{io::{BufReader, BufRead}, fs::File};
 use std::sync::Arc;
 
@@ -14,7 +14,6 @@ use super::challenge3::{WordScorer, Deciphered, break_cipher};
 pub struct XorBreaker
 {
     file_path: String,
-    pool: ThreadPool,
     dict: Arc<WordScorer>,
 }
 
@@ -24,15 +23,15 @@ impl XorBreaker
     fn new(file_path: &str) -> Self
     {
         let file_path = String::from(file_path);
-        let pool = ThreadPool::new(8);
         let dict = Arc::new(WordScorer::new());
 
-        XorBreaker { file_path, pool, dict }
+        XorBreaker { file_path, dict }
     }
 
     pub fn break_it(&self) -> Result<Deciphered>
     {
         let (tx, rx) = channel();
+        let pool = ThreadPool::new(8);
 
         let file = File::open(&self.file_path).expect("Failed to open data file.");
         let reader = BufReader::new(file);
@@ -43,7 +42,7 @@ impl XorBreaker
             let dict = self.dict.clone();
             let tx = tx.clone();
 
-            self.pool.execute(move|| {
+            pool.execute(move|| {
                 let deciphered = break_cipher(dict, &line.unwrap().clone());
                 tx.send(deciphered).expect("Unable to send wtf");
             });
