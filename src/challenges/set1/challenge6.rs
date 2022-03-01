@@ -145,6 +145,13 @@ impl RepeatingKeyXorBreaker
 
         String::from_utf8_lossy(&xored_bytes).into_owned()
     }
+
+    fn break_it(&self) -> String
+    {
+        let key = self.break_blocks();
+
+        self.decrypt(&key)
+    }
 }
 
 
@@ -192,7 +199,7 @@ mod tests
     }
 
     /// This test is very heavy and also fails. It works well enough to guess the key though
-    #[test] #[ignore]
+    #[test]
     fn test_challenge6_break_blocks()
     {
         let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
@@ -204,6 +211,16 @@ mod tests
     {
         let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
         let plaintext = breaker.decrypt("Terminator X: Bring the noise");
+
+        println!("{:?}", plaintext);
+        assert_eq!(&plaintext[..33], "I'm back and I'm ringin' the bell");
+    }
+
+    #[test]
+    fn test_challenge6_break()
+    {
+        let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
+        let plaintext = breaker.break_it();
 
         println!("{:?}", plaintext);
         assert_eq!(&plaintext[..33], "I'm back and I'm ringin' the bell");

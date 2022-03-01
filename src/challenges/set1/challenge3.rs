@@ -36,15 +36,28 @@ impl WordScorer
 
     fn get_word_score(&self, word: &str) -> Result<u16>
     {
-        // Build our fuzzy query.
-        let lev = Levenshtein::new(word, 1)?;
+        let is_dictionary_word = word.chars()
+            .all(|c| (65..=90).contains(&(c as u8))
+                || (97..=122).contains(&(c as u8))
+                || c == '\'');
 
-        // Apply our fuzzy query to the set we built.
-        let stream = self.set.search(lev).into_stream();
+        if is_dictionary_word
+        {
+            // Build our fuzzy query.
+            let lev = Levenshtein::new(word, 1)?;
 
-        let keys = stream.into_strs()?;
+            // Apply our fuzzy query to the set we built.
+            let stream = self.set.search(lev).into_stream();
 
-        Ok(keys.len() as u16)
+            let keys = stream.into_strs()?;
+
+            Ok(keys.len() as u16)
+        }
+        else
+        {
+            // Most likely not a dictionary word, let's not score it
+            Ok(0)
+        }
     }
 
     fn get_score(&self, pattern: &str) -> Result<u16>

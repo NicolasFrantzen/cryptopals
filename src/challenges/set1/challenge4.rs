@@ -72,7 +72,7 @@ mod tests
     {
         let expected_deciphered = Deciphered {
             key: '5',
-            score: 82,
+            score: 81,
             cipher: String::from("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),
             deciphered: String::from("Now that the party is jumping\n"),
         };
