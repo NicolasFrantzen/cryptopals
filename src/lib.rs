@@ -1,4 +1,4 @@
 #![allow(dead_code)]
-#![allow(unused_variables)]
 
+mod utils;
 mod challenges;
