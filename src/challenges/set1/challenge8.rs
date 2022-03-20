@@ -11,17 +11,12 @@ fn detect_ecb_in_ciphertext(file_path: &str) -> Option<String>
     let file = File::open(file_path).expect("Failed to open data file.");
     let reader = BufReader::new(file);
 
-    for cipher_text in reader.lines()
+    for cipher_text in reader.lines().flatten()
     {
-        if let Ok(cipher_text) = cipher_text
+        if let Ok(()) = check_repititions(&hex::decode(&cipher_text).ok()?)
         {
-            match check_repititions(&hex::decode(&cipher_text).ok()?)
-            {
-                Ok(()) => return Some(cipher_text),
-                Err(_) => (),
-            }
+            return Some(cipher_text)
         }
-
     }
 
     None

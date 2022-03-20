@@ -43,7 +43,7 @@ impl XorBreaker
             let tx = tx.clone();
 
             pool.execute(move|| {
-                let deciphered = break_cipher(dict, &line.unwrap().clone());
+                let deciphered = break_cipher(dict, &line.unwrap());
                 tx.send(deciphered).expect("Unable to send wtf");
             });
 

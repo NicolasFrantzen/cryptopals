@@ -7,16 +7,16 @@ impl RepeatingKeyXor
 {
     pub fn encrypt(plaintext: &str, key: &str) -> String
     {
-        hex::encode(Self::xor_bytes(plaintext.as_bytes(), key))
+        hex::encode(Self::xor_bytes(plaintext.as_bytes(), key.as_bytes()))
     }
 
-    pub fn xor_bytes(buffer: &[u8], key: &str) -> Vec<u8>
+    pub fn xor_bytes(buffer: &[u8], key: &[u8]) -> Vec<u8>
     {
         let num_repeat_to_fit: usize = (buffer.len() as f32 / key.len() as f32).ceil() as usize;
         let repeated_key = key.repeat(num_repeat_to_fit);
 
-        buffer.into_iter()
-            .zip(repeated_key.bytes().into_iter())
+        buffer.iter()
+            .zip(repeated_key.into_iter())
             .map(|(r, h)| r ^ h)
             .collect::<Vec<_>>()
     }
