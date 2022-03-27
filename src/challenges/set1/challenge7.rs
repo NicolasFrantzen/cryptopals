@@ -1,16 +1,39 @@
 //! AES in ECB mode
 //! <https://cryptopals.com/sets/1/challenges/7>
 
+use crate::utils::UnicodeToString;
+
 use openssl::{symm, symm::Cipher};
 
 use std::fs::read_to_string;
 
-pub fn decrypt_ecb(cipher_buffer: &[u8], key: &str) -> String
+pub trait Aes128EcbT
+{
+    fn decrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>;
+    fn encrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>;
+}
+
+
+impl Aes128EcbT for [u8]
+{
+    fn decrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>
+    {
+        decrypt_aes_128_ecb(self, key)
+    }
+
+    fn encrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>
+    {
+        encrypt_aes_128_ecb(self, key)
+    }
+}
+
+
+pub fn decrypt_aes_128_ecb(cipher_buffer: &[u8], key: &[u8]) -> Vec<u8>
 {
     let cipher = Cipher::aes_128_ecb();
-    let plain_text = symm::decrypt(cipher, key.as_bytes(), None, cipher_buffer).unwrap();
+    let plain_text = symm::decrypt(cipher, key, None, cipher_buffer).unwrap();
 
-    String::from_utf8_lossy(&plain_text).to_string()
+    plain_text
 }
 
 
@@ -21,14 +44,14 @@ fn decrypt_ecb_base64_from_file(file: &str, key: &str) -> String
         .flat_map(|l| base64::decode(l).expect("Not valid base64."))
         .collect();
 
-        decrypt_ecb(&cipher_buffer, key)
+    decrypt_aes_128_ecb(&cipher_buffer, key.as_bytes()).to_string()
 }
 
 
-pub fn encrypt_ecb(plain_text: &str, key: &str) -> Vec<u8>
+pub fn encrypt_aes_128_ecb(plain_text: &[u8], key: &[u8]) -> Vec<u8>
 {
     let cipher = Cipher::aes_128_ecb();
-    let cipher_text = symm::encrypt(cipher, key.as_bytes(), None, plain_text.as_bytes()).unwrap();
+    let cipher_text = symm::encrypt(cipher, key, None, plain_text).unwrap();
 
     cipher_text
 }
@@ -49,8 +72,8 @@ mod tests
     #[test]
     fn test_challenge7_encrypt()
     {
-        let plain_text = "HALLO LEGO!!";
-        let key = "YELLOW SUBMARINE";
-        assert_eq!(decrypt_ecb(&encrypt_ecb(plain_text, key), key), plain_text);
+        let plain_text = "HALLO LEGO!!".as_bytes();
+        let key = "YELLOW SUBMARINE".as_bytes();
+        assert_eq!(decrypt_aes_128_ecb(&encrypt_aes_128_ecb(plain_text, key), key), plain_text);
     }
 }

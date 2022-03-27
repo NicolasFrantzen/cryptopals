@@ -13,6 +13,7 @@ use std::fs::read_to_string;
 use super::challenge3::{WordScorer, break_cipher};
 use super::challenge5::{RepeatingKeyXor};
 
+
 fn normalize_hamming_distance(first: &[u8], second: &[u8]) -> Result<u64>
 {
     assert_eq!(first.len(), second.len());

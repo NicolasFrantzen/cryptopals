@@ -2,50 +2,51 @@
 //! <https://cryptopals.com/sets/1/challenges/10>
 
 use crate::challenges::{set1::challenge5::RepeatingKeyXor};
-use crate::challenges::{set2::challenge9::get_pkcs_7_padding};
+use crate::padding::Pkcs7Padding;
 
 use openssl::{symm, symm::Cipher};
 
-trait Aes128Cbc
+
+pub trait Aes128CbcT
 {
-    fn decrypt_aes_128_cbc(&self, key: &str) -> Vec<u8>;
-    fn encrypt_aes_128_cbc(&self, key: &str) -> Vec<u8>;
+    fn decrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>;
+    fn encrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>;
 }
 
 
-impl Aes128Cbc for [u8]
+impl Aes128CbcT for [u8]
 {
-    fn decrypt_aes_128_cbc(&self, key: &str) -> Vec<u8>
+    fn decrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>
     {
-        decrypt_aes_128_cbc(&self, key)
+        decrypt_aes_128_cbc(self, key)
     }
 
-    fn encrypt_aes_128_cbc(&self, key: &str) -> Vec<u8>
+    fn encrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>
     {
-        encrypt_aes_128_cbc(&self, key)
+        encrypt_aes_128_cbc(self, key)
     }
 }
 
 
-fn decrypt_aes_128_cbc(cipher_buffer: &[u8], key: &str) -> Vec<u8>
+fn decrypt_aes_128_cbc(cipher_buffer: &[u8], key: &[u8]) -> Vec<u8>
 {
     let cipher = Cipher::aes_128_ecb();
     let block_size = cipher.block_size();
 
     let mut full_plain_buffer: Vec<u8> = vec![];
 
-    let mut previous_block: &[u8] = &vec![0; block_size]; // initialization vector
+    let mut previous_block: &[u8] = &vec![0; block_size]; // Initialization vector
 
     for block in cipher_buffer.chunks(block_size)
     {
-        let mut padding = symm::encrypt(cipher, key.as_bytes(), None, &[16 as u8; 16]).unwrap();
+        let mut padding = symm::encrypt(cipher, key, None, &[16_u8; 16]).unwrap();
         padding.truncate(block_size);
 
         let mut block_cipher = block.to_vec();
         block_cipher.extend_from_slice(&padding);
 
-        let plain_buffer = symm::decrypt(cipher, key.as_bytes(), None, &block_cipher).unwrap();
-        let xored = RepeatingKeyXor::xor_bytes(&plain_buffer, &previous_block);
+        let plain_buffer = symm::decrypt(cipher, key, None, &block_cipher).unwrap();
+        let xored = RepeatingKeyXor::xor_bytes(&plain_buffer, previous_block);
 
         full_plain_buffer.extend_from_slice(&xored);
 
@@ -56,7 +57,7 @@ fn decrypt_aes_128_cbc(cipher_buffer: &[u8], key: &str) -> Vec<u8>
 }
 
 
-fn encrypt_aes_128_cbc(plain_buffer: &[u8], key: &str) -> Vec<u8>
+fn encrypt_aes_128_cbc(plain_buffer: &[u8], key: &[u8]) -> Vec<u8>
 {
     let cipher = Cipher::aes_128_ecb();
     let block_size = cipher.block_size();
@@ -64,11 +65,11 @@ fn encrypt_aes_128_cbc(plain_buffer: &[u8], key: &str) -> Vec<u8>
     let mut full_cipher_buffer: Vec<u8> = vec![];
     let mut previous_block: Vec<u8> = vec![0; block_size]; // initialization vector
 
-    let plain_buffer = get_pkcs_7_padding(plain_buffer, block_size);
+    let plain_buffer = plain_buffer.with_padding(block_size);
     for block in plain_buffer.chunks(block_size)
     {
-        let xored = RepeatingKeyXor::xor_bytes(&block, &previous_block);
-        let mut cipher_buffer = symm::encrypt(cipher, key.as_bytes(), None, &xored).unwrap();
+        let xored = RepeatingKeyXor::xor_bytes(block, &previous_block);
+        let mut cipher_buffer = symm::encrypt(cipher, key, None, &xored).unwrap();
         cipher_buffer.truncate(block_size);
 
         full_cipher_buffer.extend_from_slice(&cipher_buffer);
@@ -83,14 +84,14 @@ fn encrypt_aes_128_cbc(plain_buffer: &[u8], key: &str) -> Vec<u8>
 mod tests
 {
     use super::*;
-    use crate::utils::UnicodeVectors;
+    use crate::utils::UnicodeToString;
 
     use std::fs::read_to_string;
 
     #[test]
     fn test_challenge10_decrypt()
     {
-        let key = "YELLOW SUBMARINE";
+        let key = "YELLOW SUBMARINE".as_bytes();
         let cipher_text = read_to_string("data/10.txt").expect("Unable to read file.");
 
         let cipher_buffer: Vec<_> = cipher_text.split('\n')
@@ -105,7 +106,7 @@ mod tests
     #[test]
     fn test_challenge10_encrypt()
     {
-        let key = "YELLOW SUBMARINE";
+        let key = "YELLOW SUBMARINE".as_bytes();
         let cipher_text = read_to_string("data/10.txt").expect("Unable to read file.");
         let cipher_buffer = "I'm back and I'm ringin' the bell".as_bytes().encrypt_aes_128_cbc(key);
 

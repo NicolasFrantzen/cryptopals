@@ -1,4 +1,7 @@
 #![allow(dead_code)]
 
-mod utils;
+mod aes;
 mod challenges;
+mod detection;
+mod padding;
+mod utils;
