@@ -41,7 +41,7 @@ mod tests
     use super::*;
 
     use crate::aes::{Aes128Cbc, Aes128Ecb, AES_BLOCK_SIZE};
-    use crate::detection::DetectReps;
+    use crate::detect::DetectReps;
 
 
     #[test]

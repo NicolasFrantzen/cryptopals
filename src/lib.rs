@@ -2,6 +2,6 @@
 
 mod aes;
 mod challenges;
-mod detection;
+mod detect;
 mod padding;
 mod utils;

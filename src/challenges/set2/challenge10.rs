@@ -84,7 +84,7 @@ fn encrypt_aes_128_cbc(plain_buffer: &[u8], key: &[u8]) -> Vec<u8>
 mod tests
 {
     use super::*;
-    use crate::utils::UnicodeToString;
+    use crate::utils::UnicodeUtils;
 
     use std::fs::read_to_string;
 

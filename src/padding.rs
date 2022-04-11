@@ -14,13 +14,10 @@ impl Pkcs7Padding for [u8]
         let multiples: f32 = self.len() as f32 / width as f32;
         let width: usize = (multiples.ceil() as usize) * width;
 
-        let padding = vec![0x04_u8; width];
-
         self.iter()
-            .clone()
-            .zip_longest(padding.iter())
-            .map(|x| match x { Both(&a, _) => a, Right(&b) => b, Left(&a) => a })
-            .collect::<Vec<_>>()
+            .zip_longest(std::iter::repeat(0x04_u8).take(width))
+            .map(|x| match x { Both(&a, _) => a, Right(b) => b, Left(&a) => a })
+            .collect::<Vec<_> >()
     }
 }
 
@@ -29,7 +26,7 @@ impl Pkcs7Padding for [u8]
 mod tests
 {
     use super::*;
-    use crate::utils::UnicodeToString;
+    use crate::utils::UnicodeUtils;
 
     #[test]
     fn test_get_padding()

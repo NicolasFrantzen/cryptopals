@@ -2,7 +2,7 @@
 //! <https://cryptopals.com/sets/1/challenges/8>
 
 use crate::aes::AES_BLOCK_SIZE;
-use crate::detection::DetectReps;
+use crate::detect::DetectReps;
 
 
 use std::{io::{BufReader, BufRead}, fs::File};

@@ -1,7 +1,7 @@
 //! AES in ECB mode
 //! <https://cryptopals.com/sets/1/challenges/7>
 
-use crate::utils::UnicodeToString;
+use crate::utils::UnicodeUtils;
 
 use openssl::{symm, symm::Cipher};
 
