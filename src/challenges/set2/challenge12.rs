@@ -3,10 +3,10 @@
 
 use crate::padding::Pkcs7Padding;
 use crate::aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE};
-use crate::utils::{generate_random_bytes, UnicodeUtils, all_printable_chars};
+use crate::utils::{generate_random_bytes, all_printable_chars};
 
-use anyhow::Result;
 use itertools::Itertools;
+
 
 struct EncryptionOracle
 {
@@ -77,6 +77,7 @@ struct Oracle
 {
     encryption_oracle: EncryptionOracle,
     plain_text_buffer: Vec<u8>,
+    plain_text: String,
     block_size: Option<usize>,
     unknown_string_size: Option<usize>,
 }
@@ -89,6 +90,7 @@ impl Oracle
         let mut oracle = Self {
             encryption_oracle: EncryptionOracle::new(),
             plain_text_buffer: vec![],
+            plain_text: String::new(),
             block_size: None,
             unknown_string_size: None,
         };
@@ -134,6 +136,9 @@ impl Oracle
         // Move all chars to the left
         self.plain_text_buffer.remove(0);
         self.plain_text_buffer.push(b'A');
+
+        // Add to plain text
+        self.plain_text.push(new_char as char);
     }
 
     fn detect_new_char(&self, encrypted_target: &[u8]) -> Option<u8>
@@ -161,7 +166,7 @@ impl Oracle
     {
         let unknown_string_size = self.unknown_string_size.expect("Approximate string size not calculated");
 
-        for i in 0..unknown_string_size
+        for i in 1..unknown_string_size
         {
             // Calculate the one short target encryption
             let n = unknown_string_size - i;
@@ -175,9 +180,9 @@ impl Oracle
         }
     }
 
-    pub fn get_plain_text(&self) -> String
+    pub fn get_plain_text(&self) -> &String
     {
-        self.plain_text_buffer.to_string()
+        &self.plain_text
     }
 }
 
@@ -194,6 +199,7 @@ mod tests
         // Check blocksize
         let oracle = EncryptionOracle::new();
         let block_size = oracle.detect_block_size().unwrap();
+
         assert_eq!(block_size, 16);
     }
 
@@ -203,6 +209,7 @@ mod tests
         // Check for repetitions - we are indeed using ECB
         let oracle = EncryptionOracle::new();
         let s = b"YELLOW SUBMARINE".repeat(10);
+
         assert!(oracle.encryption_oracle(&s).detect_repetitions(16));
     }
 
@@ -210,6 +217,12 @@ mod tests
     fn test_challenge12()
     {
         let oracle = Oracle::new();
-        println!("{:?}", oracle.get_plain_text());
+        let expected_plain = "\
+            Rollin' in my 5.0\n\
+            With my rag-top down so my hair can blow\n\
+            The girlies on standby waving just to say hi\n\
+            Did you stop? No, I just drove by\n";
+
+        assert_eq!(expected_plain, oracle.get_plain_text());
     }
 }
