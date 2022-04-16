@@ -16,3 +16,6 @@ itertools = "0.10.3"
 ordered-float = "2.10.0"
 openssl = "0.10.38"
 rand = "0.8.5"
+serde = {version = "1.0.136", features = ["derive"]}
+serde_qs = "0.9.1"
+

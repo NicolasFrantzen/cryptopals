@@ -216,7 +216,7 @@ mod tests
     #[test]
     fn test_challenge12()
     {
-        let oracle = Oracle::new();
+        let oracle = Box::new(Oracle::new());
         let expected_plain = "\
             Rollin' in my 5.0\n\
             With my rag-top down so my hair can blow\n\
