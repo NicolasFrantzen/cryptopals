@@ -6,7 +6,7 @@ use crate::utils::UnicodeUtils;
 pub trait Pkcs7Padding<T>
 {
     fn with_padding(&self, width: usize) -> T;
-    fn without_padding(&self) -> T;
+    fn without_padding(&self) -> &Self;
 }
 
 
@@ -24,25 +24,30 @@ impl Pkcs7Padding<Vec<u8>> for [u8]
             .collect::<Vec<_> >()
     }
 
-    /// Removes padding from buffer. Currently not only trailing padding bytes will be removed,
-    /// but any padding byte in the string.
-    fn without_padding(&self) -> Vec<u8>
+    /// Return slice without padding on the right hand side
+    fn without_padding(&self) -> &[u8]
     {
-        self.iter().cloned().take_while(|x| *x != 0x04_u8).collect::<Vec<_>>()
+        match self.iter().rposition(|&x| x != 0x04_u8)
+        {
+            Some(a) => &self[..=a],
+            None => &self
+        }
     }
 }
 
 
 impl Pkcs7Padding<String> for str
 {
+    /// Applies 0x04 padding to end of string to fill size of width * N for some N
     fn with_padding(&self, width: usize) -> String
     {
         self.as_bytes().with_padding(width).to_string()
     }
 
-    fn without_padding(&self) -> String
+    /// Trim padding on the right hand side
+    fn without_padding(&self) -> &str
     {
-        self.as_bytes().without_padding().to_string()
+        self.trim_end_matches("\x04")
     }
 }
 
@@ -54,7 +59,7 @@ mod tests
     use crate::utils::UnicodeUtils;
 
     #[test]
-    fn test_with_padding()
+    fn test_padding_with()
     {
         // Vec<u8>
         assert_eq!("YELLOW SUBMARINE".as_bytes().with_padding(20).to_string(), "YELLOW SUBMARINE\x04\x04\x04\x04");
@@ -67,14 +72,18 @@ mod tests
     }
 
     #[test]
-    fn test_without_padding()
+    fn test_padding_without()
     {
-        // Vec<u8>
+        // &[u8]
         assert_eq!("YELLOW SUBMARINE".as_bytes(), "YELLOW SUBMARINE\x04\x04\x04\x04".as_bytes().without_padding());
         assert_eq!("HEJHEJHEJHEJHEJ".as_bytes(), "HEJHEJHEJHEJHEJ\x04".as_bytes().without_padding());
+        assert_eq!("YELLOW\x04 SUBMARINE".as_bytes(), "YELLOW\x04 SUBMARINE\x04\x04\x04\x04".as_bytes().without_padding());
+        assert_eq!("HEJHEJHEJHEJHEJ".as_bytes(), "HEJHEJHEJHEJHEJ".as_bytes().without_padding());
 
-        // String
+        // &str
         assert_eq!("YELLOW SUBMARINE", "YELLOW SUBMARINE\x04\x04\x04\x04".without_padding());
         assert_eq!("HEJHEJHEJHEJHEJ", "HEJHEJHEJHEJHEJ\x04".without_padding());
+        assert_eq!("YELLOW\x04 SUBMARINE", "YELLOW\x04 SUBMARINE\x04\x04\x04\x04".without_padding());
+        assert_eq!("HEJHEJHEJHEJHEJ", "HEJHEJHEJHEJHEJ".without_padding());
     }
 }

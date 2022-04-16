@@ -31,9 +31,8 @@ impl Aes128EcbT for [u8]
 pub fn decrypt_aes_128_ecb(cipher_buffer: &[u8], key: &[u8]) -> Vec<u8>
 {
     let cipher = Cipher::aes_128_ecb();
-    let plain_text = symm::decrypt(cipher, key, None, cipher_buffer).unwrap();
 
-    plain_text
+    symm::decrypt(cipher, key, None, cipher_buffer).unwrap() // TODO: return Result
 }
 
 
@@ -51,9 +50,8 @@ fn decrypt_ecb_base64_from_file(file: &str, key: &str) -> String
 pub fn encrypt_aes_128_ecb(plain_text: &[u8], key: &[u8]) -> Vec<u8>
 {
     let cipher = Cipher::aes_128_ecb();
-    let cipher_text = symm::encrypt(cipher, key, None, plain_text).unwrap();
 
-    cipher_text
+    symm::encrypt(cipher, key, None, plain_text).unwrap() // TODO: return Result
 }
 
 
