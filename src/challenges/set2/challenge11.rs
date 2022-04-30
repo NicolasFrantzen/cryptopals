@@ -11,7 +11,7 @@ use rand::{thread_rng, Rng};
 
 fn encrypt_with_random_key<T: AesEncryption>(plain_buffer: &[u8]) -> Vec<u8>
 {
-    let key = generate_random_bytes(AES_BLOCK_SIZE);
+    let key = generate_random_bytes(Some(AES_BLOCK_SIZE));
     T::encrypt(plain_buffer, &key)
 }
 
@@ -21,7 +21,7 @@ fn encryption_oracle(plain_buffer: &[u8]) -> (Vec<u8>, bool)
     let mut rng = thread_rng();
 
     let number_of_bytes = rng.gen_range(5..=10);
-    let padding = || generate_random_bytes(number_of_bytes).with_padding(AES_BLOCK_SIZE);
+    let padding = || generate_random_bytes(Some(number_of_bytes)).with_padding(AES_BLOCK_SIZE);
 
     let data = padding().into_iter()
         .chain(plain_buffer.iter().cloned())

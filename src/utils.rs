@@ -26,12 +26,21 @@ impl UnicodeUtils for [u8]
 }
 
 
-pub fn generate_random_bytes(size: usize) -> Vec<u8>
+pub fn generate_random_bytes(size: Option<usize>) -> Vec<u8>
 {
-    thread_rng().sample_iter(Standard)
+    let mut rng = thread_rng();
+
+    let size = match size
+    {
+        Some(size) => size,
+        None => rng.gen_range(0..256),
+    };
+
+    rng.sample_iter(Standard)
         .take(size)
         .collect::<Vec<u8>>()
 }
+
 
 pub fn all_printable_chars() -> impl Iterator<Item = u8>
 {

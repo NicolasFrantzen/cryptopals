@@ -40,7 +40,7 @@ impl Profile
 
     pub fn encrypt(&self, key: &[u8]) -> Vec<u8>
     {
-        let profile_str: String = self.try_into().expect("Invalid profile");
+        let profile_str = String::try_from(self).expect("Invalid profile");
 
         Aes128Ecb::encrypt(&profile_str.as_bytes().with_padding(AES_BLOCK_SIZE), key)
     }
@@ -87,17 +87,6 @@ impl TryFrom<&Profile> for String
 }
 
 
-impl TryFrom<Profile> for String
-{
-    type Error = Error;
-
-    fn try_from(profile: Profile) -> Result<String>
-    {
-        String::try_from(&profile)
-    }
-}
-
-
 #[cfg(test)]
 mod tests
 {
@@ -129,7 +118,7 @@ mod tests
     fn test_challenge13_into()
     {
         let profile_object = Profile::profile_for("foo@bar.com").unwrap();
-        let profile_qs: String = profile_object.try_into().unwrap();
+        let profile_qs = String::try_from(&profile_object).unwrap(); //profile_object.try_into().unwrap();
 
         assert_eq!(profile_qs, "email=foo@bar.com&uid=10&role=user");
     }

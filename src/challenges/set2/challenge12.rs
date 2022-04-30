@@ -19,7 +19,7 @@ impl EncryptionOracle
     pub fn new() -> Self
     {
         EncryptionOracle {
-            key: generate_random_bytes(AES_BLOCK_SIZE),
+            key: generate_random_bytes(Some(AES_BLOCK_SIZE)),
         }
     }
 
