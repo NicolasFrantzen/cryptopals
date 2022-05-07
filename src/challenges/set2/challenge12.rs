@@ -110,11 +110,7 @@ impl Oracle
 
     fn detect_string_size(&self) -> Option<usize>
     {
-        match self.block_size()
-        {
-            Some(block_size) => Some(block_size * 10_usize),
-            None => None,
-        }
+        self.block_size().map(|block_size| block_size * 10_usize)
     }
 
     fn initialize_plain_text(&mut self)

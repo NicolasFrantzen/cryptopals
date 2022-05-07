@@ -3,7 +3,7 @@
 
 use crate::padding::Pkcs7Padding;
 use crate::aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE};
-use crate::utils::{generate_random_bytes, all_printable_chars};
+use crate::utils::{generate_random_bytes};
 
 
 struct EncryptionOracle

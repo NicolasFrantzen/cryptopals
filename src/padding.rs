@@ -3,6 +3,9 @@ use itertools::Itertools;
 
 use crate::utils::UnicodeUtils;
 
+const PADDING_CHAR: u8 = 0x04_u8;
+
+
 pub trait Pkcs7Padding<T>
 {
     fn with_padding(&self, width: usize) -> T;
@@ -19,7 +22,7 @@ impl Pkcs7Padding<Vec<u8>> for [u8]
         let width: usize = (multiples.ceil() as usize) * width;
 
         self.iter()
-            .zip_longest(std::iter::repeat(0x04_u8).take(width))
+            .zip_longest(std::iter::repeat(PADDING_CHAR).take(width))
             .map(|x| match x { Both(&a, _) => a, Right(b) => b, Left(&a) => a })
             .collect::<Vec<_> >()
     }
@@ -27,10 +30,10 @@ impl Pkcs7Padding<Vec<u8>> for [u8]
     /// Return slice without padding on the right hand side
     fn without_padding(&self) -> &[u8]
     {
-        match self.iter().rposition(|&x| x != 0x04_u8)
+        match self.iter().rposition(|&x| x != PADDING_CHAR)
         {
             Some(a) => &self[..=a],
-            None => &self
+            None => self
         }
     }
 }
@@ -47,7 +50,7 @@ impl Pkcs7Padding<String> for str
     /// Trim padding on the right hand side
     fn without_padding(&self) -> &str
     {
-        self.trim_end_matches("\x04")
+        self.trim_end_matches(PADDING_CHAR as char)
     }
 }
 
