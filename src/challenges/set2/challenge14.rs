@@ -81,7 +81,8 @@ impl Oracle
             let current_len = a.len();
             if initial_length != current_len
             {
-                return Some(current_len-initial_length);
+                let offset = current_len-initial_length;
+                return Some(offset);
             }
         }
 
