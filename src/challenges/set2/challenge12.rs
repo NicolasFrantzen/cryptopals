@@ -176,7 +176,7 @@ impl Oracle
         }
     }
 
-    pub fn get_plain_text(&self) -> &String
+    pub fn plain_text(&self) -> &String
     {
         &self.plain_text
     }
@@ -219,6 +219,6 @@ mod tests
             The girlies on standby waving just to say hi\n\
             Did you stop? No, I just drove by\n";
 
-        assert_eq!(expected_plain, oracle.get_plain_text());
+        assert_eq!(expected_plain, oracle.plain_text());
     }
 }

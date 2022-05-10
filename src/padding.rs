@@ -10,26 +10,32 @@ const PADDING_CHAR: u8 = 0x04_u8;
 
 pub trait Pkcs7Padding
 {
-    type ReturnType;
+    type OwnedPaddingType;
 
-    fn with_padding(&self, width: usize) -> Self::ReturnType;
+    fn with_padding(&self, block_size: usize) -> Self::OwnedPaddingType;
+    //fn padded_size(&self, block_size: usize) -> usize;
     fn without_padding(&self) -> &Self;
     fn validate_padding(&self) -> Result<&Self>;
 }
 
 
+pub fn padded_size(length: usize, block_size: usize) -> usize
+{
+    let multiples: f32 = length as f32 / block_size as f32;
+
+    (multiples.ceil() as usize) * block_size
+}
+
+
 impl Pkcs7Padding for [u8]
 {
-    type ReturnType = Vec<u8>;
+    type OwnedPaddingType = Vec<u8>;
 
     /// Applies 0x04 padding bytes at end of buffer to fill size of width * N for some N
-    fn with_padding(&self, width: usize) -> Vec<u8>
+    fn with_padding(&self, block_size: usize) -> Vec<u8>
     {
-        let multiples: f32 = self.len() as f32 / width as f32;
-        let width: usize = (multiples.ceil() as usize) * width;
-
         self.iter()
-            .zip_longest(std::iter::repeat(PADDING_CHAR).take(width))
+            .zip_longest(std::iter::repeat(PADDING_CHAR).take(padded_size(self.len(), block_size)))
             .map(|x| match x { Both(&a, _) => a, Right(b) => b, Left(&a) => a })
             .collect::<Vec<_> >()
     }
@@ -62,7 +68,7 @@ impl Pkcs7Padding for [u8]
 
 impl Pkcs7Padding for str
 {
-    type ReturnType = String;
+    type OwnedPaddingType = String;
 
     /// Applies 0x04 padding to end of string to fill size of width * N for some N
     fn with_padding(&self, width: usize) -> String
@@ -81,7 +87,7 @@ impl Pkcs7Padding for str
     {
         self.as_bytes()
             .validate_padding()
-            .map(|s| std::str::from_utf8(s).unwrap())
+            .map(|s| s.to_str())
     }
 }
 

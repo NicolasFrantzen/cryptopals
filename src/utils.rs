@@ -5,6 +5,7 @@ use rand::distributions::Standard;
 pub trait UnicodeUtils
 {
     fn to_string(&self) -> String;
+    fn to_str(&self) -> &str;
     fn append_char(&self, c: u8) -> Vec<u8>;
 }
 
@@ -14,6 +15,11 @@ impl UnicodeUtils for [u8]
     fn to_string(&self) -> String
     {
         String::from_utf8_lossy(self).to_string()
+    }
+
+    fn to_str(&self) -> &str
+    {
+        std::str::from_utf8(self).expect("Invalid UTF-8 string")
     }
 
     fn append_char(&self, c: u8) -> Vec<u8>

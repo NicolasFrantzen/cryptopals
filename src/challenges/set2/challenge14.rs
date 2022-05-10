@@ -1,7 +1,8 @@
 //! Byte-at-a-time ECB decryption (Harder)
 //! <https://cryptopals.com/sets/1/challenges/14>
 
-use crate::padding::Pkcs7Padding;
+use crate::detect::DetectReps;
+use crate::padding::{Pkcs7Padding, padded_size};
 use crate::aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE};
 use crate::utils::{generate_random_bytes};
 
@@ -89,9 +90,33 @@ impl Oracle
         None
     }
 
-    fn detect_size_of_prefix(&self) -> Option<usize>
+    fn detect_prefix_size(&self) -> Option<usize>
     {
-        todo!()
+        let repetitions = 4;
+        let repeated_block = "YELLOW SUBMARINE".repeat(repetitions);
+
+        let mut buffer = repeated_block;
+
+        for i in 0..AES_BLOCK_SIZE
+        {
+            let oracle_cipher = self.encryption_oracle.encryption_oracle(buffer.as_bytes());
+
+            // Append one padding byte to align `random_prefix`
+            buffer.insert_str(0, "\x04");
+
+            if let Some(consecutive_index) = oracle_cipher.detect_consecutive_repetitions(AES_BLOCK_SIZE, repetitions)
+            {
+                // Remove count of padding bytes inserted from the index
+                return Some(consecutive_index - i);
+            }
+        }
+
+        None
+    }
+
+    fn detect_padded_prefix_size(&self) -> Option<usize>
+    {
+        Some(padded_size(self.detect_prefix_size()?, AES_BLOCK_SIZE))
     }
 }
 
@@ -125,13 +150,9 @@ mod tests
     #[test]
     fn test_challenge14()
     {
-        /*let oracle = Box::new(Oracle::new());
-        let expected_plain = "\
-            Rollin' in my 5.0\n\
-            With my rag-top down so my hair can blow\n\
-            The girlies on standby waving just to say hi\n\
-            Did you stop? No, I just drove by\n";
+        let oracle = Box::new(Oracle::new());
+        assert_eq!(oracle.detect_prefix_size().unwrap(), oracle.encryption_oracle.random_prefix.len());
 
-        assert_eq!(expected_plain, oracle.get_plain_text());*/
+        println!("{:?}", oracle.detect_padded_prefix_size());
     }
 }
