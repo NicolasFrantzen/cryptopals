@@ -5,3 +5,4 @@ mod challenges;
 mod detect;
 mod padding;
 mod utils;
+mod oracle;

@@ -5,7 +5,7 @@ use anyhow::{Result, anyhow};
 use crate::utils::{UnicodeUtils, all_printable_chars};
 
 
-const PADDING_CHAR: u8 = 0x04_u8;
+pub const PADDING_CHAR: u8 = 0x04_u8;
 
 
 pub trait Pkcs7Padding
@@ -13,7 +13,6 @@ pub trait Pkcs7Padding
     type OwnedPaddingType;
 
     fn with_padding(&self, block_size: usize) -> Self::OwnedPaddingType;
-    //fn padded_size(&self, block_size: usize) -> usize;
     fn without_padding(&self) -> &Self;
     fn validate_padding(&self) -> Result<&Self>;
 }
@@ -55,7 +54,8 @@ impl Pkcs7Padding for [u8]
     fn validate_padding(&self) -> Result<&Self>
     {
         let mut all_printable_chars = all_printable_chars();
-        let non_padding_pos = self.iter().rposition(|&x| x != PADDING_CHAR && all_printable_chars.contains(&x as &u8));
+        let non_padding_pos = self.iter()
+            .rposition(|&x| x != PADDING_CHAR && all_printable_chars.contains(&x as &u8));
 
         match non_padding_pos
         {
