@@ -1,7 +1,9 @@
 //! ECB cut-and-paste
 //! <https://cryptopals.com/sets/1/challenges/13>
 
-use crate::{aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE}, padding::Pkcs7Padding, utils::UnicodeUtils};
+use crate::aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE};
+use crate::padding::Pkcs7Padding;
+use crate::utils::UnicodeUtils;
 
 use serde_qs as qs;
 use serde::{Deserialize, Serialize};
