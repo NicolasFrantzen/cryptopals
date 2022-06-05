@@ -13,6 +13,7 @@ use std::fs::read_to_string;
 use super::challenge3::{WordScorer, break_cipher};
 use super::challenge5::{RepeatingKeyXor};
 
+
 fn normalize_hamming_distance(first: &[u8], second: &[u8]) -> Result<u64>
 {
     assert_eq!(first.len(), second.len());
@@ -25,11 +26,6 @@ fn normalize_hamming_distance(first: &[u8], second: &[u8]) -> Result<u64>
 
 fn normalize_hamming_distance_on_slices(buffer: &[u8], keysize: usize) -> Result<f64>
 {
-    let first = &buffer[0..keysize];
-    let second = &buffer[keysize..2*keysize];
-    let third = &buffer[2*keysize..3*keysize];
-    let fourth = &buffer[3*keysize..4*keysize];
-
     let mut slices: Vec<&[u8]> = vec![];
     for i in 0..4
     {
@@ -141,7 +137,7 @@ impl RepeatingKeyXorBreaker
 
     fn decrypt(&self, key: &str) -> String
     {
-        let xored_bytes = RepeatingKeyXor::xor_bytes(&self.cipher_buffer, key);
+        let xored_bytes = RepeatingKeyXor::xor_bytes(&self.cipher_buffer, key.as_bytes());
 
         String::from_utf8_lossy(&xored_bytes).into_owned()
     }
@@ -193,12 +189,11 @@ mod tests
     {
         let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
 
-        let transposed_blocks = breaker.get_transposed_blocks();
+        let _transposed_blocks = breaker.get_transposed_blocks();
         // TODO: write a test of something i dno
         //println!("{:?}", transposed_blocks);
     }
 
-    /// This test is very heavy and also fails. It works well enough to guess the key though
     #[test]
     fn test_challenge6_break_blocks()
     {

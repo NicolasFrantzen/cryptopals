@@ -1,4 +1,8 @@
 #![allow(dead_code)]
-#![allow(unused_variables)]
 
+mod aes;
 mod challenges;
+mod detect;
+mod padding;
+mod utils;
+mod oracle;

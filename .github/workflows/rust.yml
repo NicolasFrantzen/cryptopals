@@ -20,5 +20,7 @@ jobs:
         lfs: 'true'
     - name: Build
       run: cargo build --verbose
+    - name: Run linting
+      run: cargo clippy -- -D warnings
     - name: Run tests (in release)
       run: cargo test --verbose --release -- --show-output
