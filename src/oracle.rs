@@ -37,9 +37,28 @@ impl Oracle
 
         oracle.calculate_block_size();
         oracle.initialize_plain_text();
-        oracle.decipher();
 
         oracle
+    }
+
+    pub fn block_size(&self) -> &Option<usize>
+    {
+        &self.block_size
+    }
+
+    pub fn plain_text(&self) -> &String
+    {
+        &self.plain_text
+    }
+
+    pub fn random_prefix_offset(&self) -> &Option<usize>
+    {
+        &self.random_prefix_offset
+    }
+
+    pub fn encryption_oracle(&self, plain_buffer: &[u8]) -> Vec<u8>
+    {
+        self.encryption_oracle.encryption_oracle(plain_buffer)
     }
 
     fn calculate_block_size(&mut self)
@@ -57,11 +76,6 @@ impl Oracle
     fn initialize_plain_text(&mut self)
     {
         self.plain_text_buffer = b"A".repeat(self.unknown_string_size.expect("Approximate string size not calculated"));
-    }
-
-    pub fn block_size(&self) -> &Option<usize>
-    {
-        &self.block_size
     }
 
     fn add_new_character_to_buffer(&mut self, new_char: u8)
@@ -88,11 +102,11 @@ impl Oracle
             new_buffer.extend_from_slice(plain_buffer);
 
             // Return the encrypted buffer, but without the padded random prefix
-            self.encryption_oracle.encryption_oracle(&new_buffer)[offset + extra_padding_size..].to_vec()
+            self.encryption_oracle(&new_buffer)[offset + extra_padding_size..].to_vec()
         }
         else
         {
-            self.encryption_oracle.encryption_oracle(plain_buffer)
+            self.encryption_oracle(plain_buffer)
         }
     }
 
@@ -117,7 +131,7 @@ impl Oracle
         None
     }
 
-    fn decipher(&mut self)
+    pub fn decipher(&mut self)
     {
         let unknown_string_size = self.unknown_string_size.expect("Approximate string size not calculated");
 
@@ -133,11 +147,6 @@ impl Oracle
                 self.add_new_character_to_buffer(new_char);
             }
         }
-    }
-
-    pub fn plain_text(&self) -> &String
-    {
-        &self.plain_text
     }
 
     pub fn detect_block_size(&self) -> Option<usize>
@@ -170,7 +179,7 @@ impl Oracle
 
         for i in 0..AES_BLOCK_SIZE
         {
-            let oracle_cipher = self.encryption_oracle.encryption_oracle(buffer.as_bytes());
+            let oracle_cipher = self.encryption_oracle(buffer.as_bytes());
 
             // Append one padding byte to align `random_prefix`
             buffer.insert(0, PADDING_CHAR as char);

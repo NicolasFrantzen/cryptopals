@@ -76,7 +76,9 @@ mod tests
     fn test_challenge12_check_block_size()
     {
         // Check blocksize
-        let oracle = Oracle::new(Box::new(EncryptionOracle12::new()));
+        let mut oracle = Oracle::new(Box::new(EncryptionOracle12::new()));
+        oracle.decipher();
+
         let block_size = oracle.detect_block_size().unwrap();
 
         assert_eq!(block_size, 16);
@@ -97,14 +99,18 @@ mod tests
     {
         // This is a test for ensuring that the oracle can be used in both challenge 12 and 14
 
-        let oracle = Oracle::new(Box::new(EncryptionOracle12::new()));
+        let mut oracle = Oracle::new(Box::new(EncryptionOracle12::new()));
+        oracle.decipher();
+
         assert_eq!(oracle.detect_prefix_size(), Some(0));
     }
 
     #[test]
     fn test_challenge12()
     {
-        let oracle = Oracle::new(Box::new(EncryptionOracle12::new()));
+        let mut oracle = Oracle::new(Box::new(EncryptionOracle12::new()));
+        oracle.decipher();
+
         let expected_plain = "\
             Rollin' in my 5.0\n\
             With my rag-top down so my hair can blow\n\

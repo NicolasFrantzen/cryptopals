@@ -70,7 +70,8 @@ mod tests
     fn test_challenge14_check_block_size()
     {
         // Check blocksize
-        let oracle = Oracle::new(Box::new(EncryptionOracle14::new()));
+        let mut oracle = Oracle::new(Box::new(EncryptionOracle14::new()));
+        oracle.decipher();
         let block_size = oracle.detect_block_size().unwrap();
 
         assert_eq!(block_size, 16);
@@ -89,7 +90,9 @@ mod tests
     #[test]
     fn test_challenge14()
     {
-        let oracle = Oracle::new(Box::new(EncryptionOracle14::new()));
+        let mut oracle = Oracle::new(Box::new(EncryptionOracle14::new()));
+        oracle.decipher();
+
         let expected_plain = "\
             Rollin' in my 5.0\n\
             With my rag-top down so my hair can blow\n\

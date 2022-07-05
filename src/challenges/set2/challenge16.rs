@@ -6,7 +6,7 @@ use crate::utils::{UnicodeUtils, generate_random_bytes};
 use crate::aes::{AesEncryption, Aes128Cbc, AES_BLOCK_SIZE};
 use crate::padding::Pkcs7Padding;
 
-
+#[derive(Clone)]
 struct EncryptionOracle16
 {
     key: Vec<u8>,
@@ -46,8 +46,6 @@ impl EncryptionOracle16
     {
         let plain_buffer = Aes128Cbc::decrypt(cipher_buffer, &self.key);
         let plain_text = plain_buffer.without_padding().to_string();
-        println!("pb: {:?}", &plain_buffer[32..]);
-        println!("pt: {:?}", plain_text);
 
         plain_text.contains(";admin=true;")
     }
@@ -57,6 +55,7 @@ impl EncryptionOracle16
 #[cfg(test)]
 mod tests
 {
+    use crate::oracle::Oracle;
     use super::*;
 
     #[test]
@@ -70,7 +69,9 @@ mod tests
     #[test]
     fn test_challenge16()
     {
-        let oracle = EncryptionOracle16::new();
+        let encryption_oracle = Box::new(EncryptionOracle16::new());
+        let oracle = Oracle::new(encryption_oracle.clone());
+
         let mut attack_buffer = vec![]; //vec![0; AES_BLOCK_SIZE];
         attack_buffer.extend_from_slice("AadminAtrueA".as_bytes());
 
@@ -81,8 +82,9 @@ mod tests
         cipher_buffer[offset+6] = cipher_buffer[offset+6] ^ (b'A' ^ b'=');
         cipher_buffer[offset+11] = cipher_buffer[offset+11] ^ (b'A' ^ b';');
 
-        assert!(oracle.check_for_admin(&cipher_buffer));
+        assert!(encryption_oracle.check_for_admin(&cipher_buffer));
 
+        println!("HEJ: {:?}", oracle.detect_prefix_size());
         // To improve this solution, calculate the offset 32 instead of assuming it
     }
 }
