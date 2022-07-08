@@ -4,11 +4,18 @@
 use std::{io::{BufReader, BufRead}, fs::File};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::ops::Deref;
 
 use anyhow::{Result, anyhow};
 
 use fst::{IntoStreamer, Set};
 use fst::automaton::Levenshtein;
+
+
+pub trait GetScore
+{
+    fn get_score(&self, pattern: &str) -> Result<u16>;
+}
 
 
 pub struct WordScorer
@@ -60,13 +67,31 @@ impl WordScorer
         }
     }
 
-    fn get_score(&self, pattern: &str) -> Result<u16>
+    pub fn get_score(&self, pattern: &str) -> Result<u16>
     {
         let score = pattern.split(' ')
             .map(|w| self.get_word_score(w))
             .sum::<Result<u16,_>>()?;
 
         Ok(score)
+    }
+}
+
+
+impl GetScore for WordScorer
+{
+    fn get_score(&self, pattern: &str) -> Result<u16>
+    {
+        self.get_score(pattern)
+    }
+}
+
+
+impl GetScore for Arc<WordScorer>
+{
+    fn get_score(&self, pattern: &str) -> Result<u16>
+    {
+        self.deref().get_score(pattern)
     }
 }
 
@@ -83,7 +108,7 @@ fn decipher(cipher: &str, key: u8) -> Result<String>
 }
 
 
-pub fn break_cipher(dict: Arc<WordScorer>, cipher: &str) -> Result<Deciphered>
+pub fn break_cipher<T: GetScore>(dict: T, cipher: &str) -> Result<Deciphered>
 {
     let mut key_score = HashMap::new();
 
@@ -94,6 +119,7 @@ pub fn break_cipher(dict: Arc<WordScorer>, cipher: &str) -> Result<Deciphered>
             if deciphered.is_ascii()
             {
                 let score = dict.get_score(&deciphered).unwrap();
+
                 key_score.insert(c as char, score);
             }
         }
@@ -150,7 +176,7 @@ mod tests
     #[test]
     fn test_challenge3()
     {
-        let dict = Arc::new(WordScorer::new());
+        let dict = WordScorer::new();
 
         let cipher = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
 
@@ -160,7 +186,7 @@ mod tests
             cipher: String::from(cipher),
             deciphered: String::from("Cooking MC's like a pound of bacon"),
         };
-        let deciphered = break_cipher(dict.clone(), cipher).unwrap();
+        let deciphered = break_cipher(dict, cipher).unwrap();
 
         assert_eq!(deciphered, expected_deciphered);
         println!("{:?}",  deciphered);
