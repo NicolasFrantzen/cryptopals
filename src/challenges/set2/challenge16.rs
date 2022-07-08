@@ -78,9 +78,9 @@ mod tests
         let mut cipher_buffer = oracle.encryption_oracle(&attack_buffer);
 
         let offset = 16;
-        cipher_buffer[offset] = cipher_buffer[offset] ^ (b'A' ^ b';');
-        cipher_buffer[offset+6] = cipher_buffer[offset+6] ^ (b'A' ^ b'=');
-        cipher_buffer[offset+11] = cipher_buffer[offset+11] ^ (b'A' ^ b';');
+        cipher_buffer[offset] ^= b'A' ^ b';';
+        cipher_buffer[offset+6] ^= b'A' ^ b'=';
+        cipher_buffer[offset+11] ^= b'A' ^ b';';
 
         assert!(encryption_oracle.check_for_admin(&cipher_buffer));
 
