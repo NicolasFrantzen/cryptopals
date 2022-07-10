@@ -6,22 +6,22 @@ pub const AES_BLOCK_SIZE: usize = 16_usize;
 
 pub trait AesEncryption
 {
-    fn encrypt(plain_buffer: &[u8], key: &[u8]) -> Vec<u8>;
-    fn decrypt(cipher_buffer: &[u8], key: &[u8]) -> Vec<u8>;
+    fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>;
+    fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>;
 }
 
 pub struct Aes128Cbc;
 
 impl AesEncryption for Aes128Cbc
 {
-    fn encrypt(plain_buffer: &[u8], key: &[u8]) -> Vec<u8>
+    fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>
     {
-        plain_buffer.encrypt_aes_128_cbc(key)
+        plain_buffer.encrypt_aes_128_cbc(key, iv)
     }
 
-    fn decrypt(cipher_buffer: &[u8], key: &[u8]) -> Vec<u8>
+    fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>
     {
-        cipher_buffer.decrypt_aes_128_cbc(key)
+        cipher_buffer.decrypt_aes_128_cbc(key, iv)
     }
 }
 
@@ -30,12 +30,12 @@ pub struct Aes128Ecb;
 
 impl AesEncryption for Aes128Ecb
 {
-    fn encrypt(plain_buffer: &[u8], key: &[u8]) -> Vec<u8>
+    fn encrypt(plain_buffer: &[u8], key: &[u8], _iv: Option<&[u8]>) -> Vec<u8>
     {
         plain_buffer.encrypt_aes_128_ecb(key)
     }
 
-    fn decrypt(cipher_buffer: &[u8], key: &[u8]) -> Vec<u8>
+    fn decrypt(cipher_buffer: &[u8], key: &[u8], _iv: Option<&[u8]>) -> Vec<u8>
     {
         cipher_buffer.decrypt_aes_128_ecb(key)
     }

@@ -1,5 +1,5 @@
 //! CBC bitflipping attacks
-//! <https://cryptopals.com/sets/1/challenges/16>
+//! <https://cryptopals.com/sets/2/challenges/16>
 
 use crate::oracle::EncryptionOracle;
 use crate::utils::{UnicodeUtils, generate_random_bytes};
@@ -27,7 +27,7 @@ impl EncryptionOracle for EncryptionOracle16
         plain_text += tail;
 
 
-        Aes128Cbc::encrypt(plain_text.with_padding(AES_BLOCK_SIZE).as_bytes(), &self.key)
+        Aes128Cbc::encrypt(plain_text.with_padding(AES_BLOCK_SIZE).as_bytes(), &self.key, None)
     }
 }
 
@@ -44,7 +44,7 @@ impl EncryptionOracle16
 
     fn check_for_admin(&self, cipher_buffer: &[u8]) -> bool
     {
-        let plain_buffer = Aes128Cbc::decrypt(cipher_buffer, &self.key);
+        let plain_buffer = Aes128Cbc::decrypt(cipher_buffer, &self.key, None);
         let plain_text = plain_buffer.without_padding().to_string();
 
         plain_text.contains(";admin=true;")

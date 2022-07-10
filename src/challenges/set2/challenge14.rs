@@ -1,5 +1,5 @@
 //! Byte-at-a-time ECB decryption (Harder)
-//! <https://cryptopals.com/sets/1/challenges/14>
+//! <https://cryptopals.com/sets/2/challenges/14>
 
 
 use crate::padding::Pkcs7Padding;
@@ -54,7 +54,7 @@ impl EncryptionOracle14
 
     fn encrypt<T: AesEncryption>(&self, plain_buffer: &[u8]) -> Vec<u8>
     {
-        T::encrypt(plain_buffer, &self.key)
+        T::encrypt(plain_buffer, &self.key, None)
     }
 }
 

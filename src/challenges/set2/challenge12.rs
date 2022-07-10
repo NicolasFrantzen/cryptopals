@@ -1,5 +1,5 @@
 //! Byte-at-a-time ECB decryption (Simple)
-//! <https://cryptopals.com/sets/1/challenges/12>
+//! <https://cryptopals.com/sets/2/challenges/12>
 
 use crate::padding::Pkcs7Padding;
 use crate::aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE};
@@ -48,7 +48,7 @@ impl EncryptionOracle12
 
     fn encrypt<T: AesEncryption>(&self, plain_buffer: &[u8]) -> Vec<u8>
     {
-        T::encrypt(plain_buffer, &self.key)
+        T::encrypt(plain_buffer, &self.key, None)
     }
 
     fn encryption_oracle(&self, plain_buffer: &[u8]) -> Vec<u8>

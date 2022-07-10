@@ -1,5 +1,5 @@
-//! CBC bitflipping attacks
-//! <https://cryptopals.com/sets/1/challenges/16>
+//! The CBC padding oracle
+//! <https://cryptopals.com/sets/3/challenges/17>
 
 //use crate::oracle::EncryptionOracle;
 use crate::utils::{generate_random_bytes};
@@ -24,14 +24,14 @@ impl EncryptionOracle17
     /// Returns ciphertext and IV
     pub fn encrypt(&self, plain_text: &[u8]) -> Vec<u8>
     {
-        Aes128Cbc::encrypt(plain_text.with_padding(AES_BLOCK_SIZE).as_slice(), &self.key)
+        Aes128Cbc::encrypt(plain_text.with_padding(AES_BLOCK_SIZE).as_slice(), &self.key, None)
     }
 
     /// Decrypts a string and checks its padding
     /// Returns Some(plain_text) if the padding was valid, None otherwise
-    pub fn decrypt(&self, cipher_text: &[u8]) -> Option<Vec<u8>>
+    pub fn padding_oracle(&self, cipher_text: &[u8]) -> Option<Vec<u8>>
     {
-        let plain_text = Aes128Cbc::decrypt(cipher_text, &self.key);
+        let plain_text = Aes128Cbc::decrypt(cipher_text, &self.key, None);
 
         plain_text.as_slice()
             .validate_padding()
@@ -64,6 +64,20 @@ mod tests
     }
 
     #[test]
+    fn test_challenge17_decrypt()
+    {
+        let oracle = EncryptionOracle17::new();
+
+        // Good padding
+        let cipher_text = oracle.encrypt("YELLOW SUBMA\x04\x04\x04\x04".as_bytes());
+        assert!(oracle.padding_oracle(&cipher_text).is_some());
+
+        // Bad padding
+        let cipher_text = oracle.encrypt("YELLOW SUBMA\x04\x03\x02\x01".as_bytes());
+        assert!(oracle.padding_oracle(&cipher_text).is_none());
+    }
+
+    #[test]
     fn test_challenge17()
     {
         let _oracle = EncryptionOracle17::new();
@@ -71,7 +85,5 @@ mod tests
         let mut rng = thread_rng();
         let random_string = *get_10_strings().choose(&mut rng).unwrap();
         println!("{:?}", random_string);
-
-
     }
 }
