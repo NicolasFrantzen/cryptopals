@@ -1,5 +1,5 @@
 //! An ECB/CBC detection oracle
-//! <https://cryptopals.com/sets/1/challenges/11>
+//! <https://cryptopals.com/sets/2/challenges/11>
 
 
 use crate::padding::Pkcs7Padding;
@@ -12,7 +12,7 @@ use rand::{thread_rng, Rng};
 fn encrypt_with_random_key<T: AesEncryption>(plain_buffer: &[u8]) -> Vec<u8>
 {
     let key = generate_random_bytes(Some(AES_BLOCK_SIZE));
-    T::encrypt(plain_buffer, &key)
+    T::encrypt(plain_buffer, &key, None)
 }
 
 

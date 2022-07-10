@@ -1,5 +1,5 @@
 //! PKCS#7 padding validation
-//! <https://cryptopals.com/sets/1/challenges/15>
+//! <https://cryptopals.com/sets/2/challenges/15>
 //!
 //! Moved to crate::padding.
 
