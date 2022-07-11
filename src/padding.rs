@@ -2,7 +2,7 @@ use itertools::EitherOrBoth::{Both, Right, Left};
 use itertools::Itertools;
 use anyhow::{Result, anyhow};
 
-use crate::utils::{UnicodeUtils, all_printable_chars};
+use crate::utils::UnicodeUtils;
 
 
 pub const PADDING_CHAR: u8 = 0x04_u8;
@@ -53,16 +53,11 @@ impl Pkcs7Padding for [u8]
     }
 
     /// Set 2 Challenge 15
-    /// Validate padding, i.e. accept bytes padded with 0x04, but not other unprintable chars.
-    /// This function does not assume any buffer size
+    /// Validate padding, i.e. checks that the padded byte with value N are equal to the N last bytes
+    /// This function does not assume any buffer size, and thus only looks at the padding, not if it's a complete block.
     fn validate_padding(&self) -> Result<&Self>
     {
         let padding = self[self.len()-1];
-
-        if all_printable_chars().contains(&padding as &u8)
-        {
-            return Ok(self);
-        }
 
         let padding_size = padding as usize;
         if padding_size < self.len()
@@ -73,7 +68,7 @@ impl Pkcs7Padding for [u8]
                 .skip(padding_start)
                 .all(|&c| c == padding)
             {
-                return self[..padding_start].validate_padding();
+                return Ok(&self[..padding_start]);
             }
         }
 
@@ -112,17 +107,10 @@ impl Pkcs7Padding for str
 mod tests
 {
     use super::*;
-    use crate::utils::UnicodeUtils;
 
     #[test]
     fn test_padding_with()
     {
-        // Vec<u8>
-        assert_eq!("YELLOW SUBMARINE".as_bytes().with_padding(16).to_string(), "YELLOW SUBMARINE");
-        assert_eq!("YELLOW SUBMARINE".as_bytes().with_padding(20).to_string(), "YELLOW SUBMARINE\x04\x04\x04\x04");
-        assert_eq!("HEJHEJHEJHEJHEJ".as_bytes().with_padding(4).to_string(), "HEJHEJHEJHEJHEJ\x01");
-        assert_eq!("HEJHEJHEJHEJHEJ".as_bytes().with_padding(4), "HEJHEJHEJHEJHEJ\x01".as_bytes());
-
         // String
         assert_eq!("YELLOW SUBMARINE".with_padding(16), "YELLOW SUBMARINE");
         assert_eq!("YELLOW SUBMARINE".with_padding(20), "YELLOW SUBMARINE\x04\x04\x04\x04");
@@ -132,19 +120,12 @@ mod tests
     #[test]
     fn test_padding_without()
     {
-        // &[u8]
-        assert_eq!("YELLOW SUBMARINE".as_bytes(), "YELLOW SUBMARINE\x04\x04\x04\x04".as_bytes().without_padding());
-        assert_eq!("HEJHEJHEJHEJHEJ".as_bytes(), "HEJHEJHEJHEJHEJ\x01".as_bytes().without_padding());
-        assert_eq!("YELLOW\x04 SUBMARINE".as_bytes(), "YELLOW\x04 SUBMARINE\x04\x04\x04\x04".as_bytes().without_padding());
-        assert_eq!("HEJHEJHEJHEJHEJ".as_bytes(), "HEJHEJHEJHEJHEJ".as_bytes().without_padding());
-        assert_eq!("YELLOW SUBMARINE\x04\x03\x02\x01".as_bytes(), "YELLOW SUBMARINE\x04\x03\x02\x01".as_bytes().without_padding());
-
         // &str
-        assert_eq!("YELLOW SUBMARINE", "YELLOW SUBMARINE\x04\x04\x04\x04".without_padding());
-        assert_eq!("HEJHEJHEJHEJHEJ", "HEJHEJHEJHEJHEJ\x01".without_padding());
-        assert_eq!("YELLOW\x04 SUBMARINE", "YELLOW\x04 SUBMARINE\x04\x04\x04\x04".without_padding());
-        assert_eq!("HEJHEJHEJHEJHEJ", "HEJHEJHEJHEJHEJ".without_padding());
-        assert_eq!("YELLOW SUBMARINE\x04\x03\x02\x01", "YELLOW SUBMARINE\x04\x03\x02\x01".without_padding());
+        assert_eq!("YELLOW SUBMARINE\x04\x04\x04\x04".without_padding(), "YELLOW SUBMARINE");
+        assert_eq!("HEJHEJHEJHEJHEJ\x01".without_padding(), "HEJHEJHEJHEJHEJ");
+        assert_eq!("YELLOW\x04 SUBMARINE\x04\x04\x04\x04".without_padding(), "YELLOW\x04 SUBMARINE");
+        assert_eq!("HEJHEJHEJHEJHEJ".without_padding(), "HEJHEJHEJHEJHEJ");
+        assert_eq!("YELLOW SUBMARINE\x01\x02\x03\x04".without_padding(), "YELLOW SUBMARINE\x01\x02\x03\x04");
     }
 
     #[test]
@@ -152,13 +133,13 @@ mod tests
     {
         // Valid
         assert_eq!("ICE ICE BABY\x04\x04\x04\x04".as_bytes().validate_padding().unwrap(), "ICE ICE BABY".as_bytes());
-        assert_eq!("ICE ICE BABY".as_bytes().validate_padding().unwrap(), "ICE ICE BABY".as_bytes());
         assert_eq!("ICE ICE BAB\x05\x05\x05\x05\x05".as_bytes().validate_padding().unwrap(), "ICE ICE BAB".as_bytes());
         assert_eq!("YELLOW SUBMARIN\x01".as_bytes().validate_padding().unwrap(), "YELLOW SUBMARIN".as_bytes());
 
         // Invalid
+        assert!("ICE ICE BABY".as_bytes().validate_padding().is_err());
         assert!("ICE ICE BABY\x05\x05\x05\x05".as_bytes().validate_padding().is_err());
         assert!("ICE ICE BABY\x01\x02\x03\x04".as_bytes().validate_padding().is_err());
-        assert!("YELLOW SUBMA\x04\x03\x02\x01".as_bytes().validate_padding().is_err());
+        assert!("YELLOW SUBMA\x01\x02\x03\x04".as_bytes().validate_padding().is_err());
     }
 }
