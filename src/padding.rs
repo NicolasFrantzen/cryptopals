@@ -60,7 +60,7 @@ impl Pkcs7Padding for [u8]
         let padding = self[self.len()-1];
 
         let padding_size = padding as usize;
-        if padding_size < self.len()
+        if padding_size <= self.len()
         {
             let padding_start = self.len() - padding_size;
 
@@ -135,6 +135,7 @@ mod tests
         assert_eq!("ICE ICE BABY\x04\x04\x04\x04".as_bytes().validate_padding().unwrap(), "ICE ICE BABY".as_bytes());
         assert_eq!("ICE ICE BAB\x05\x05\x05\x05\x05".as_bytes().validate_padding().unwrap(), "ICE ICE BAB".as_bytes());
         assert_eq!("YELLOW SUBMARIN\x01".as_bytes().validate_padding().unwrap(), "YELLOW SUBMARIN".as_bytes());
+        assert_eq!("\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10".as_bytes().validate_padding().unwrap(), "".as_bytes());
 
         // Invalid
         assert!("ICE ICE BABY".as_bytes().validate_padding().is_err());
