@@ -2,10 +2,13 @@
 //! <https://cryptopals.com/sets/3/challenges/17>
 
 //use crate::oracle::EncryptionOracle;
-use crate::utils::{generate_random_bytes};
+use crate::utils::{generate_random_bytes, UnicodeUtils};
 use crate::aes::{AesEncryption, Aes128Cbc, AES_BLOCK_SIZE};
 use crate::padding::Pkcs7Padding;
 
+//use std::slice::Chunks;
+//use itertools::Itertools;
+use std::str;
 
 #[derive(Clone)]
 struct EncryptionOracle17
@@ -41,26 +44,58 @@ impl EncryptionOracle17
             .ok()
     }
 
-    pub fn attack_block(&self, plain_text: &str)
+    pub fn attack_block(&self, plain_text: &[u8], iv: &[u8]) -> Vec<u8>
     {
-        let iv: [u8; AES_BLOCK_SIZE] = [0; AES_BLOCK_SIZE];
-        let cipher_text = self.encrypt(plain_text.as_bytes(), &iv);
+        let cipher_text = self.encrypt(plain_text, iv);
 
-        let mut temp_iv = iv;
+        let iv_length = iv.len();
+        let mut zeroing_iv = iv.to_owned();
 
-        for c in 0..=255_u8
+        let oracle_do = |i: usize|
         {
-            let j = temp_iv.len() - 1;
-            temp_iv[j] = c;
+            // Create the new temporary iv by xoring the zeroing iv with the desired padding for the attack (i.e. the position)
+            let mut temp_iv = zeroing_iv.xor(i as u8);
+            let attack_position = iv_length - i;
 
-            if self.padding_oracle(&cipher_text, &temp_iv).is_some()
+            // Try all characters for the attack byte, the oracle will return a result if the padding is valid
+            for c in 0..=255_u8
             {
-                break;
+                temp_iv[attack_position] = c;
+                //dbg!(&temp_iv[..]);
+
+                // Use the oracle
+                if self.padding_oracle(&cipher_text, &temp_iv).is_some()
+                {
+                    // Apply the succesful byte to the zeroing iv
+                    zeroing_iv[attack_position] = c ^ (i as u8);
+
+                    //dbg!(&temp_iv[..]);
+                    //dbg!(&zeroing_iv[..]);
+                    return;
+                }
             }
-        }
+        };
 
+        (1..iv_length + 1).for_each(oracle_do);
 
-        dbg!(&temp_iv);
+        zeroing_iv.to_owned()
+    }
+
+    pub fn full_attack(&self, plain_text: &str) -> String
+    {
+        // Choose the initial iv to be zeroes
+        let mut iv = vec![0; AES_BLOCK_SIZE];
+
+        // Attack a chunk at a time
+        plain_text.as_bytes()
+            .chunks(AES_BLOCK_SIZE)
+            .fold(String::new(), |acc, x| {
+                iv = self.attack_block(x, &iv);
+
+                //dbg!(&iv);
+
+                acc + x.to_str()
+            })
     }
 }
 
@@ -69,9 +104,8 @@ impl EncryptionOracle17
 mod tests
 {
     use super::*;
-    use rand::{thread_rng, prelude::SliceRandom};
 
-    const fn get_10_strings() -> [&'static str; 10]
+    const fn attackable_strings() -> [&'static str; 10]
     {
         [
             "MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
@@ -103,15 +137,24 @@ mod tests
     }
 
     #[test]
-    fn test_challenge17_todo()
+    fn test_challenge17()
     {
-        let oracle = EncryptionOracle17::new();
+        let test_attack = |plain_text: &str|
+        {
+            let oracle = EncryptionOracle17::new();
+            let attacked_string = oracle.full_attack(plain_text);
 
-        let mut rng = thread_rng();
-        let random_string = *get_10_strings().choose(&mut rng).unwrap();
-        println!("{:?}", random_string);
+            println!("Attacked string: {}", attacked_string);
+            assert_eq!(oracle.full_attack(plain_text), plain_text);
+        };
 
-        // TODO
-        oracle.attack_block("YELLOW SUBMARINE");
+        // Attack a 32 char string
+        test_attack("YELLOW SUBMARINEYELLOW SUBMARINE");
+
+        // Attack all the provided strings and base64 decode them.
+        attackable_strings().iter().for_each(|c| {
+            println!("Base64 decode: {}", base64::decode(c).unwrap().to_str());
+            test_attack(c);
+        });
     }
 }
