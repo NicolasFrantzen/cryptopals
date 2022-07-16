@@ -1,14 +1,12 @@
 //! The CBC padding oracle
 //! <https://cryptopals.com/sets/3/challenges/17>
 
-//use crate::oracle::EncryptionOracle;
 use crate::utils::{generate_random_bytes, UnicodeUtils};
 use crate::aes::{AesEncryption, Aes128Cbc, AES_BLOCK_SIZE};
 use crate::padding::Pkcs7Padding;
 
-//use std::slice::Chunks;
-//use itertools::Itertools;
 use std::str;
+
 
 #[derive(Clone)]
 struct EncryptionOracle17
@@ -51,7 +49,7 @@ impl EncryptionOracle17
         let iv_length = iv.len();
         let mut zeroing_iv = iv.to_owned();
 
-        let oracle_do = |i: usize|
+        let attack_byte = |i: usize|
         {
             // Create the new temporary iv by xoring the zeroing iv with the desired padding for the attack (i.e. the position)
             let mut temp_iv = zeroing_iv.xor(i as u8);
@@ -76,9 +74,9 @@ impl EncryptionOracle17
             }
         };
 
-        (1..iv_length + 1).for_each(oracle_do);
+        (1..iv_length + 1).for_each(attack_byte);
 
-        zeroing_iv.to_owned()
+        zeroing_iv
     }
 
     pub fn full_attack(&self, plain_text: &str) -> String
@@ -89,12 +87,12 @@ impl EncryptionOracle17
         // Attack a chunk at a time
         plain_text.as_bytes()
             .chunks(AES_BLOCK_SIZE)
-            .fold(String::new(), |acc, x| {
-                iv = self.attack_block(x, &iv);
+            .fold(String::new(), |acc, block| {
+                iv = self.attack_block(block, &iv);
 
                 //dbg!(&iv);
 
-                acc + x.to_str()
+                acc + block.to_str()
             })
     }
 }
