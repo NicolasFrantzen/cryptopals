@@ -6,19 +6,14 @@
 #[cfg(test)]
 mod tests
 {
-    use crate::aes::{Aes128Ctr, CtrCounter};
+    use crate::{aes::{Aes128Ctr, AesEncryption}, utils::UnicodeUtils};
 
-    use super::*;
-
-    #[ignore]
     #[test]
     fn test_challenge18()
     {
-        const CIPHER_TEXT: &'static str = "L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==";
+        let cipher_text = "L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==";
+        let plain_text = Aes128Ctr::decrypt(&base64::decode(cipher_text).unwrap(), "YELLOW SUBMARINE".as_bytes(), None);
 
-        let counter = CtrCounter::new("YELLOW SUBMARINE".as_bytes());
-        let plain_text = Aes128Ctr::decrypt_with_counter(CIPHER_TEXT.as_bytes(), counter);
-
-        assert_eq!(plain_text, "HEJ".as_bytes());
+        assert_eq!(plain_text, "Yo, VIP Let's kick it Ice, Ice, baby Ice, Ice, baby ".as_bytes());
     }
 }

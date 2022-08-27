@@ -9,6 +9,7 @@ pub trait UnicodeUtils
     fn to_str(&self) -> &str;
     fn append_char(&self, c: u8) -> Vec<u8>;
     fn xor(&self, c: u8) -> Vec<u8>;
+    fn xor_all(&self, other: &[u8]) -> Vec<u8>;
 }
 
 
@@ -37,6 +38,14 @@ impl UnicodeUtils for [u8]
         self.iter()
             .map(|x| x ^ c)
             .collect_vec()
+    }
+
+    fn xor_all(&self, other: &[u8]) -> Vec<u8>
+    {
+        self.iter()
+            .zip(other.iter())
+            .map(|(x,y)| x ^ y)
+            .collect::<Vec<_>>()
     }
 }
 
@@ -69,7 +78,7 @@ mod tests
     use super::*;
 
     #[test]
-    fn test_unicode_utils_xor()
+    fn test_xor()
     {
         assert_eq!(
             [0, 0, 68].xor(1),
@@ -79,6 +88,20 @@ mod tests
         assert_eq!(
             [68, 68, 68].xor(1),
             [69, 69, 69]
+        );
+    }
+
+    #[test]
+    fn test_xor_all()
+    {
+        assert_eq!(
+            [0, 0, 68].xor_all(&[1, 1, 1]),
+            [1, 1, 69]
+        );
+
+        assert_eq!(
+            [0, 0, 68].xor_all(&[1, 2, 3]),
+            [1, 2, 71]
         );
     }
 }
