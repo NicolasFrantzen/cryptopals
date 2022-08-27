@@ -158,7 +158,7 @@ pub fn break_cipher<T: GetScore>(dict: T, cipher: &str) -> Result<Deciphered>
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Deciphered
 {
     pub key: char,
