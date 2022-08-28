@@ -10,8 +10,9 @@ use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::fs::read_to_string;
 
+use crate::utils::UnicodeUtils;
+
 use super::challenge3::{WordScorer, break_cipher};
-use super::challenge5::{RepeatingKeyXor};
 
 
 fn normalize_hamming_distance(first: &[u8], second: &[u8]) -> Result<u64>
@@ -137,7 +138,7 @@ impl RepeatingKeyXorBreaker
 
     fn decrypt(&self, key: &str) -> String
     {
-        let xored_bytes = RepeatingKeyXor::xor_bytes(&self.cipher_buffer, key.as_bytes());
+        let xored_bytes = &self.cipher_buffer.xor_repeating_key(key.as_bytes());
 
         String::from_utf8_lossy(&xored_bytes).into_owned()
     }

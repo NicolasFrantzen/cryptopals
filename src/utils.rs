@@ -10,6 +10,7 @@ pub trait UnicodeUtils
     fn append_char(&self, c: u8) -> Vec<u8>;
     fn xor(&self, c: u8) -> Vec<u8>;
     fn xor_all(&self, other: &[u8]) -> Vec<u8>;
+    fn xor_repeating_key(&self, key: &[u8]) -> Vec<u8>;
 }
 
 
@@ -46,6 +47,18 @@ impl UnicodeUtils for [u8]
             .zip(other.iter())
             .map(|(x,y)| x ^ y)
             .collect::<Vec<_>>()
+    }
+
+    fn xor_repeating_key(&self, key: &[u8]) -> Vec<u8>
+    {
+        let num_repeat_to_fit: usize = (self.len() as f32 / key.len() as f32).ceil() as usize;
+        let repeated_key = key.repeat(num_repeat_to_fit);
+
+        /*self.iter()
+            .zip(repeated_key.into_iter())
+            .map(|(r, h)| r ^ h)
+            .collect::<Vec<_>>()*/
+        self.xor_all(&repeated_key)
     }
 }
 

@@ -2,11 +2,10 @@
 //! <https://cryptopals.com/sets/3/challenges/18>
 
 
-
 #[cfg(test)]
 mod tests
 {
-    use crate::{aes::{Aes128Ctr, AesEncryption}, utils::UnicodeUtils};
+    use crate::aes::{Aes128Ctr, AesEncryption};
 
     #[test]
     fn test_challenge18()
