@@ -1,22 +1,18 @@
 //! CBC bitflipping attacks
 //! <https://cryptopals.com/sets/2/challenges/16>
 
+use crate::aes::{Aes128Cbc, AesEncryption, AES_BLOCK_SIZE};
 use crate::oracle::EncryptionOracle;
-use crate::utils::{UnicodeUtils, generate_random_bytes};
-use crate::aes::{AesEncryption, Aes128Cbc, AES_BLOCK_SIZE};
 use crate::padding::Pkcs7Padding;
+use crate::utils::{generate_random_bytes, UnicodeUtils};
 
 #[derive(Clone)]
-struct EncryptionOracle16
-{
+struct EncryptionOracle16 {
     key: Vec<u8>,
 }
 
-
-impl EncryptionOracle for EncryptionOracle16
-{
-    fn encryption_oracle(&self, plain_buffer: &[u8]) -> Vec<u8>
-    {
+impl EncryptionOracle for EncryptionOracle16 {
+    fn encryption_oracle(&self, plain_buffer: &[u8]) -> Vec<u8> {
         let input_str = plain_buffer.to_str();
 
         let head = "comment1=cooking%20MCs;userdata=";
@@ -26,24 +22,22 @@ impl EncryptionOracle for EncryptionOracle16
         plain_text += &input_str.replace(';', "%3b").replace('=', "%3d");
         plain_text += tail;
 
-
-        Aes128Cbc::encrypt(plain_text.with_padding(AES_BLOCK_SIZE).as_bytes(), &self.key, None)
+        Aes128Cbc::encrypt(
+            plain_text.with_padding(AES_BLOCK_SIZE).as_bytes(),
+            &self.key,
+            None,
+        )
     }
 }
 
-
-impl EncryptionOracle16
-{
-    pub fn new() -> Self
-    {
+impl EncryptionOracle16 {
+    pub fn new() -> Self {
         Self {
             key: generate_random_bytes(Some(AES_BLOCK_SIZE)),
         }
     }
 
-
-    fn check_for_admin(&self, cipher_buffer: &[u8]) -> bool
-    {
+    fn check_for_admin(&self, cipher_buffer: &[u8]) -> bool {
         let plain_buffer = Aes128Cbc::decrypt(cipher_buffer, &self.key, None);
         let plain_text = plain_buffer.without_padding().to_string();
 
@@ -51,24 +45,20 @@ impl EncryptionOracle16
     }
 }
 
-
 #[cfg(test)]
-mod tests
-{
-    use crate::oracle::Oracle;
+mod tests {
     use super::*;
+    use crate::oracle::Oracle;
 
     #[test]
-    fn test_challenge16_no_admin_found()
-    {
+    fn test_challenge16_no_admin_found() {
         let oracle = EncryptionOracle16::new();
         let cipher_buffer = oracle.encryption_oracle(";admin=true;".as_bytes());
         assert!(!oracle.check_for_admin(&cipher_buffer));
     }
 
     #[test]
-    fn test_challenge16()
-    {
+    fn test_challenge16() {
         let encryption_oracle = Box::new(EncryptionOracle16::new());
         let oracle = Oracle::new(encryption_oracle.clone());
 
@@ -79,8 +69,8 @@ mod tests
 
         let offset = 16;
         cipher_buffer[offset] ^= b'A' ^ b';';
-        cipher_buffer[offset+6] ^= b'A' ^ b'=';
-        cipher_buffer[offset+11] ^= b'A' ^ b';';
+        cipher_buffer[offset + 6] ^= b'A' ^ b'=';
+        cipher_buffer[offset + 11] ^= b'A' ^ b';';
 
         assert!(encryption_oracle.check_for_admin(&cipher_buffer));
 

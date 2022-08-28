@@ -5,8 +5,7 @@ use crate::utils::UnicodeUtils;
 
 pub const AES_BLOCK_SIZE: usize = 16_usize;
 
-pub trait Aes128
-{
+pub trait Aes128 {
     fn decrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>;
     fn encrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>;
     fn decrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>;
@@ -15,50 +14,40 @@ pub trait Aes128
     fn encrypt_aes_128_ctr(&self, key: &[u8]) -> Vec<u8>;
 }
 
-impl Aes128 for [u8]
-{
-    fn decrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>
-    {
+impl Aes128 for [u8] {
+    fn decrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8> {
         Aes128Ecb::decrypt(self, key, None)
     }
 
-    fn encrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8>
-    {
+    fn encrypt_aes_128_ecb(&self, key: &[u8]) -> Vec<u8> {
         Aes128Ecb::encrypt(self, key, None)
     }
 
-    fn decrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>
-    {
+    fn decrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8> {
         Aes128Cbc::decrypt(self, key, None)
     }
 
-    fn encrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8>
-    {
+    fn encrypt_aes_128_cbc(&self, key: &[u8]) -> Vec<u8> {
         Aes128Cbc::encrypt(self, key, None)
     }
 
-    fn decrypt_aes_128_ctr(&self, key: &[u8]) -> Vec<u8>
-    {
+    fn decrypt_aes_128_ctr(&self, key: &[u8]) -> Vec<u8> {
         Aes128Ctr::decrypt(self, key, None)
     }
 
-    fn encrypt_aes_128_ctr(&self, key: &[u8]) -> Vec<u8>
-    {
+    fn encrypt_aes_128_ctr(&self, key: &[u8]) -> Vec<u8> {
         Aes128Ctr::encrypt(self, key, None)
     }
 }
 
-pub trait AesEncryption
-{
+pub trait AesEncryption {
     fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>;
     fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>;
 }
 
 pub struct Aes128Cbc;
-impl AesEncryption for Aes128Cbc
-{
-    fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>
-    {
+impl AesEncryption for Aes128Cbc {
+    fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8> {
         let cipher = Cipher::aes_128_ecb();
         let block_size = cipher.block_size();
 
@@ -69,8 +58,7 @@ impl AesEncryption for Aes128Cbc
         }; // initialization vector
 
         let plain_buffer = plain_buffer.with_padding(block_size);
-        for block in plain_buffer.chunks(block_size)
-        {
+        for block in plain_buffer.chunks(block_size) {
             let xored = &block.xor_repeating_key(&previous_block);
             let mut cipher_buffer = symm::encrypt(cipher, key, None, xored).unwrap();
             cipher_buffer.truncate(block_size);
@@ -82,8 +70,7 @@ impl AesEncryption for Aes128Cbc
         full_cipher_buffer
     }
 
-    fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>
-    {
+    fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8> {
         let cipher = Cipher::aes_128_ecb();
         let block_size = cipher.block_size();
 
@@ -93,8 +80,7 @@ impl AesEncryption for Aes128Cbc
             None => vec![0; block_size],
         }; // Initialization vector
 
-        for block in cipher_buffer.chunks(block_size)
-        {
+        for block in cipher_buffer.chunks(block_size) {
             let mut padding = symm::encrypt(cipher, key, None, &[16_u8; 16]).unwrap();
             padding.truncate(block_size);
 
@@ -114,48 +100,39 @@ impl AesEncryption for Aes128Cbc
 }
 
 pub struct Aes128Ecb;
-impl AesEncryption for Aes128Ecb
-{
-    fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>
-    {
+impl AesEncryption for Aes128Ecb {
+    fn encrypt(plain_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8> {
         symm::encrypt(Cipher::aes_128_ecb(), key, iv, plain_buffer).unwrap() // TODO: return Result
     }
 
-    fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8>
-    {
+    fn decrypt(cipher_buffer: &[u8], key: &[u8], iv: Option<&[u8]>) -> Vec<u8> {
         symm::decrypt(Cipher::aes_128_ecb(), key, iv, cipher_buffer).unwrap() // TODO: return Result
     }
 }
 
-struct CtrCounter
-{
+struct CtrCounter {
     nonce: u64,
 }
 
-impl CtrCounter
-{
-    pub fn new(nonce: u64) -> Self
-    {
-        Self{ nonce }
+impl CtrCounter {
+    pub fn new(nonce: u64) -> Self {
+        Self { nonce }
     }
 
-    fn iter(&self) -> CtrCounterIter
-    {
+    fn iter(&self) -> CtrCounterIter {
         CtrCounterIter {
             count: 0,
-            nonce: self.nonce
+            nonce: self.nonce,
         }
     }
 }
 
-struct CtrCounterIter
-{
+struct CtrCounterIter {
     count: u64,
     nonce: u64,
 }
 
-impl Iterator for CtrCounterIter
-{
+impl Iterator for CtrCounterIter {
     type Item = Vec<u8>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -174,62 +151,67 @@ impl Iterator for CtrCounterIter
 
 pub struct Aes128Ctr;
 
-impl Aes128Ctr
-{
-    fn encode(buffer: &[u8], key: &[u8]) -> Vec<u8>
-    {
-        buffer.chunks(AES_BLOCK_SIZE)
+impl Aes128Ctr {
+    fn encode(buffer: &[u8], key: &[u8]) -> Vec<u8> {
+        buffer
+            .chunks(AES_BLOCK_SIZE)
             .zip(CtrCounter::new(0).iter())
             .flat_map(|(x, y)| x.xor_all(&Aes128Ecb::encrypt(&y, key, None)))
             .collect::<Vec<_>>()
     }
 }
 
-impl AesEncryption for Aes128Ctr
-{
-
-    fn encrypt(plain_buffer: &[u8], key: &[u8], _iv: Option<&[u8]>) -> Vec<u8>
-    {
+impl AesEncryption for Aes128Ctr {
+    fn encrypt(plain_buffer: &[u8], key: &[u8], _iv: Option<&[u8]>) -> Vec<u8> {
         Self::encode(plain_buffer, key)
     }
 
-    fn decrypt(cipher_buffer: &[u8], key: &[u8], _iv: Option<&[u8]>) -> Vec<u8>
-    {
+    fn decrypt(cipher_buffer: &[u8], key: &[u8], _iv: Option<&[u8]>) -> Vec<u8> {
         Self::encode(cipher_buffer, key)
     }
 }
 
-
 #[cfg(test)]
-mod tests
-{
+mod tests {
     use super::*;
 
     #[test]
-    fn test_aes_ecb_encrypt_decrypt()
-    {
+    fn test_aes_ecb_encrypt_decrypt() {
         let plain_text = "HALLO LEGO!!".as_bytes();
         let key = "YELLOW SUBMARINE".as_bytes();
-        assert_eq!(Aes128Ecb::decrypt(&Aes128Ecb::encrypt(plain_text, key, None), key, None), plain_text);
+        assert_eq!(
+            Aes128Ecb::decrypt(&Aes128Ecb::encrypt(plain_text, key, None), key, None),
+            plain_text
+        );
     }
 
     #[test]
-    fn test_aes_ctr_counter()
-    {
+    fn test_aes_ctr_counter() {
         let nonce = 0;
         let mut counter = CtrCounter::new(nonce).iter();
 
-        assert_eq!(counter.next(), Some([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].to_vec()));
-        assert_eq!(counter.next(), Some([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0].to_vec()));
-        assert_eq!(counter.next(), Some([0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0].to_vec()));
-        assert_eq!(counter.next(), Some([0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0].to_vec()));
+        assert_eq!(
+            counter.next(),
+            Some([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].to_vec())
+        );
+        assert_eq!(
+            counter.next(),
+            Some([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0].to_vec())
+        );
+        assert_eq!(
+            counter.next(),
+            Some([0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0].to_vec())
+        );
+        assert_eq!(
+            counter.next(),
+            Some([0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0].to_vec())
+        );
 
         assert_eq!(counter.next().map(|x| x.len()), Some(AES_BLOCK_SIZE));
     }
 
     #[test]
-    fn test_aes_ctr_encrypt_decrypt()
-    {
+    fn test_aes_ctr_encrypt_decrypt() {
         let key = "YELLOW SUBMARINE";
         let plain_text = "\
             Rollin' in my 5.0\n\
@@ -238,6 +220,9 @@ mod tests
             Did you stop? No, I just drove by\n";
 
         let cipher_buffer = Aes128Ctr::encrypt(plain_text.as_bytes(), key.as_bytes(), None);
-        assert_eq!(Aes128Ctr::decrypt(&cipher_buffer, key.as_bytes(), None), plain_text.as_bytes());
+        assert_eq!(
+            Aes128Ctr::decrypt(&cipher_buffer, key.as_bytes(), None),
+            plain_text.as_bytes()
+        );
     }
 }

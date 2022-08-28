@@ -1,35 +1,32 @@
 //! Detect single-character XOR
 //! <https://cryptopals.com/sets/1/challenges/4>
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use threadpool::ThreadPool;
 
 use std::sync::mpsc::channel;
-use std::{io::{BufReader, BufRead}, fs::File};
 use std::sync::Arc;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
-use super::challenge3::{WordScorer, Deciphered, break_cipher};
+use super::challenge3::{break_cipher, Deciphered, WordScorer};
 
-
-pub struct XorBreaker
-{
+pub struct XorBreaker {
     file_path: String,
     dict: Arc<WordScorer>,
 }
 
-
-impl XorBreaker
-{
-    fn new(file_path: &str) -> Self
-    {
+impl XorBreaker {
+    fn new(file_path: &str) -> Self {
         let file_path = String::from(file_path);
         let dict = Arc::new(WordScorer::new());
 
         XorBreaker { file_path, dict }
     }
 
-    pub fn break_it(&self) -> Result<Deciphered>
-    {
+    pub fn break_it(&self) -> Result<Deciphered> {
         let (tx, rx) = channel();
         let pool = ThreadPool::new(8);
 
@@ -37,12 +34,11 @@ impl XorBreaker
         let reader = BufReader::new(file);
 
         let mut lines_count = 0;
-        for line in reader.lines()
-        {
+        for line in reader.lines() {
             let dict = self.dict.clone();
             let tx = tx.clone();
 
-            pool.execute(move|| {
+            pool.execute(move || {
                 let deciphered = break_cipher(dict, &line.unwrap());
                 tx.send(deciphered).expect("Unable to send wtf");
             });
@@ -50,26 +46,25 @@ impl XorBreaker
             lines_count += 1;
         }
 
-        let deciphered = rx.iter().take(lines_count)
+        let deciphered = rx
+            .iter()
+            .take(lines_count)
             .filter(|f| f.is_ok())
             .max_by(|a, b| a.as_ref().unwrap().score.cmp(&b.as_ref().unwrap().score));
 
         match deciphered {
             Some(deciphered) => deciphered,
-            None => Err(anyhow!("Cannot decipher!"))
+            None => Err(anyhow!("Cannot decipher!")),
         }
     }
 }
 
-
 #[cfg(test)]
-mod tests
-{
+mod tests {
     use super::*;
 
     #[test]
-    fn test_challenge4()
-    {
+    fn test_challenge4() {
         let expected_deciphered = Deciphered {
             key: '5',
             score: 81,
@@ -79,6 +74,6 @@ mod tests
         let deciphered = XorBreaker::new("data/4.txt").break_it().unwrap();
 
         assert_eq!(deciphered, expected_deciphered);
-        println!("{:?}",  deciphered);
+        println!("{:?}", deciphered);
     }
 }

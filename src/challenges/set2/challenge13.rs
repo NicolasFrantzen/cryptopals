@@ -1,28 +1,23 @@
 //! ECB cut-and-paste
 //! <https://cryptopals.com/sets/2/challenges/13>
 
-use crate::aes::{AesEncryption, Aes128Ecb, AES_BLOCK_SIZE};
+use crate::aes::{Aes128Ecb, AesEncryption, AES_BLOCK_SIZE};
 use crate::padding::Pkcs7Padding;
 use crate::utils::UnicodeUtils;
 
-use serde_qs as qs;
+use anyhow::{bail, Error, Result};
 use serde::{Deserialize, Serialize};
-use anyhow::{Result, Error, bail};
-
+use serde_qs as qs;
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
-struct Profile
-{
+struct Profile {
     email: String,
     uid: u32,
     role: String,
 }
 
-
-impl Profile
-{
-    fn new(email: &str, uid: u32, role: &str) -> Self
-    {
+impl Profile {
+    fn new(email: &str, uid: u32, role: &str) -> Self {
         Self {
             email: email.to_owned(),
             uid,
@@ -30,25 +25,25 @@ impl Profile
         }
     }
 
-    pub fn profile_for(email: &str) -> Result<Self>
-    {
-        if email.contains('=') || email.contains('&')
-        {
+    pub fn profile_for(email: &str) -> Result<Self> {
+        if email.contains('=') || email.contains('&') {
             bail!("Invalid character detected!");
         }
 
         Ok(Self::new(email, 10, "user"))
     }
 
-    pub fn encrypt(&self, key: &[u8]) -> Vec<u8>
-    {
+    pub fn encrypt(&self, key: &[u8]) -> Vec<u8> {
         let profile_str = String::try_from(self).expect("Invalid profile");
 
-        Aes128Ecb::encrypt(&profile_str.as_bytes().with_padding(AES_BLOCK_SIZE), key, None)
+        Aes128Ecb::encrypt(
+            &profile_str.as_bytes().with_padding(AES_BLOCK_SIZE),
+            key,
+            None,
+        )
     }
 
-    pub fn decrypt(cipher_buffer: &[u8], key: &[u8]) -> Result<Self>
-    {
+    pub fn decrypt(cipher_buffer: &[u8], key: &[u8]) -> Result<Self> {
         let profile_str = Aes128Ecb::decrypt(cipher_buffer, key, None)
             .without_padding()
             .to_string();
@@ -59,26 +54,20 @@ impl Profile
     }
 }
 
-
-impl TryFrom<&str> for Profile
-{
+impl TryFrom<&str> for Profile {
     type Error = Error;
 
-    fn try_from(from_str: &str) -> Result<Self>
-    {
+    fn try_from(from_str: &str) -> Result<Self> {
         let profile: Profile = qs::from_str(from_str)?;
 
         Ok(profile)
     }
 }
 
-
-impl TryFrom<&Profile> for String
-{
+impl TryFrom<&Profile> for String {
     type Error = Error;
 
-    fn try_from(profile: &Profile) -> Result<String>
-    {
+    fn try_from(profile: &Profile) -> Result<String> {
         let profile_str = qs::to_string(profile)?
             // Apparently unicode characters are converted in serde, hack some back
             // Halp. Tried some regex but had troubles parsing to binary
@@ -103,15 +92,12 @@ impl TryFrom<&Profile> for String
     }
 }
 
-
 #[cfg(test)]
-mod tests
-{
+mod tests {
     use super::*;
 
     #[test]
-    fn test_challenge13_from()
-    {
+    fn test_challenge13_from() {
         let profile_object = Profile::profile_for("foo@bar.com").unwrap();
         let profile_qs = Profile::try_from("email=foo@bar.com&uid=10&role=user").unwrap();
 
@@ -119,8 +105,7 @@ mod tests
     }
 
     #[test]
-    fn test_challenge13_invalid_email()
-    {
+    fn test_challenge13_invalid_email() {
         let profile = Profile::profile_for("foo@bar.com&role=admin");
         assert!(profile.is_err());
 
@@ -132,8 +117,7 @@ mod tests
     }
 
     #[test]
-    fn test_challenge13_into()
-    {
+    fn test_challenge13_into() {
         let profile_object = Profile::profile_for("foo@bar.com").unwrap();
         let profile_qs = String::try_from(&profile_object).unwrap();
 
@@ -147,19 +131,20 @@ mod tests
     }
 
     #[test]
-    fn test_challenge13_ecb()
-    {
+    fn test_challenge13_ecb() {
         let profile_object = Profile::profile_for("foo@bar.com").unwrap();
 
         let key = "YELLOW SUBMARINE".as_bytes();
         let profile_encrypted = profile_object.encrypt(key);
 
-        assert_eq!(profile_object, Profile::decrypt(&profile_encrypted, key).unwrap());
+        assert_eq!(
+            profile_object,
+            Profile::decrypt(&profile_encrypted, key).unwrap()
+        );
     }
 
     #[test]
-    fn test_challenge13_admin()
-    {
+    fn test_challenge13_admin() {
         let key = "YELLOW SUBMARINE".as_bytes();
 
         // We first create a normal user profile
@@ -184,6 +169,9 @@ mod tests
         let admin_profile_decrypted = Profile::decrypt(&admin_profile, key).unwrap();
 
         println!("Decrypted: {:?}", admin_profile_decrypted);
-        assert_eq!(admin_profile_decrypted, Profile::new("aafoo@bar.com", 10, "admin"));
+        assert_eq!(
+            admin_profile_decrypted,
+            Profile::new("aafoo@bar.com", 10, "admin")
+        );
     }
 }

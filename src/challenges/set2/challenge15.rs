@@ -3,12 +3,8 @@
 //!
 //! Moved to crate::padding.
 
-
 #[cfg(test)]
-mod tests
-{
+mod tests {
     #[test]
-    fn test_challenge15()
-    {
-    }
+    fn test_challenge15() {}
 }

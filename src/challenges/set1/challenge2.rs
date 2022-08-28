@@ -3,8 +3,7 @@
 
 use anyhow::Result;
 
-fn xor_hex_str(left: &str, right: &str) -> Result<String>
-{
+fn xor_hex_str(left: &str, right: &str) -> Result<String> {
     let iter: Vec<u8> = hex::decode(left)?
         .iter()
         .zip(hex::decode(right)?.iter())
@@ -15,16 +14,17 @@ fn xor_hex_str(left: &str, right: &str) -> Result<String>
 }
 
 #[cfg(test)]
-mod tests
-{
+mod tests {
     use super::*;
 
     #[test]
-    fn test_challenge2()
-    {
+    fn test_challenge2() {
         let left = "1c0111001f010100061a024b53535009181c";
         let right = "686974207468652062756c6c277320657965";
 
-        assert_eq!(xor_hex_str(left, right).unwrap(), "746865206b696420646f6e277420706c6179");
+        assert_eq!(
+            xor_hex_str(left, right).unwrap(),
+            "746865206b696420646f6e277420706c6179"
+        );
     }
 }
