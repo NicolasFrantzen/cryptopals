@@ -140,7 +140,7 @@ impl RepeatingKeyXorBreaker
     {
         let xored_bytes = &self.cipher_buffer.xor_repeating_key(key.as_bytes());
 
-        String::from_utf8_lossy(&xored_bytes).into_owned()
+        String::from_utf8_lossy(xored_bytes).into_owned()
     }
 
     fn break_it(&self) -> String

@@ -72,7 +72,7 @@ impl AesEncryption for Aes128Cbc
         for block in plain_buffer.chunks(block_size)
         {
             let xored = &block.xor_repeating_key(&previous_block);
-            let mut cipher_buffer = symm::encrypt(cipher, key, None, &xored).unwrap();
+            let mut cipher_buffer = symm::encrypt(cipher, key, None, xored).unwrap();
             cipher_buffer.truncate(block_size);
 
             full_cipher_buffer.extend_from_slice(&cipher_buffer);
@@ -104,7 +104,7 @@ impl AesEncryption for Aes128Cbc
             let plain_buffer = symm::decrypt(cipher, key, None, &block_cipher).unwrap();
             let xored = &plain_buffer.xor_repeating_key(&previous_block);
 
-            full_plain_buffer.extend_from_slice(&xored);
+            full_plain_buffer.extend_from_slice(xored);
 
             previous_block = block.to_owned();
         }
