@@ -11,17 +11,17 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use super::challenge3::{break_cipher, Deciphered, WordScorer};
+use super::challenge3::{break_cipher, Deciphered, DictionaryScorer};
 
 pub struct XorBreaker {
     file_path: String,
-    dict: Arc<WordScorer>,
+    dict: Arc<DictionaryScorer>,
 }
 
 impl XorBreaker {
     fn new(file_path: &str) -> Self {
         let file_path = String::from(file_path);
-        let dict = Arc::new(WordScorer::new());
+        let dict = Arc::new(DictionaryScorer::new());
 
         XorBreaker { file_path, dict }
     }
@@ -66,7 +66,7 @@ mod tests {
     #[test]
     fn test_challenge4() {
         let expected_deciphered = Deciphered {
-            key: '5',
+            key: b'5',
             score: 81,
             cipher: String::from("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),
             deciphered: String::from("Now that the party is jumping\n"),

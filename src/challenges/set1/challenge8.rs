@@ -1,19 +1,11 @@
 //! Detect AES in ECB mode
 //! <https://cryptopals.com/sets/1/challenges/8>
 
-use crate::aes::AES_BLOCK_SIZE;
+use crate::{aes::AES_BLOCK_SIZE, utils::read_lines_from_file};
 use crate::detect::DetectReps;
 
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
-
 fn detect_ecb_in_ciphertext(file_path: &str) -> Option<String> {
-    let file = File::open(file_path).expect("Failed to open data file.");
-    let reader = BufReader::new(file);
-
-    for cipher_text in reader.lines().flatten() {
+    for cipher_text in read_lines_from_file(file_path) {
         if hex::decode(&cipher_text)
             .ok()?
             .detect_repetitions(AES_BLOCK_SIZE)

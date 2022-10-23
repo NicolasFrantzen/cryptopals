@@ -9,10 +9,11 @@ use threadpool::ThreadPool;
 use std::fs::read_to_string;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
+use std::marker::{Send, Sync};
 
-use crate::utils::UnicodeUtils;
+use crate::utils::{UnicodeUtils, Base64};
 
-use super::challenge3::{break_cipher, WordScorer};
+use super::challenge3::{break_cipher, PatternScorer};
 
 fn normalize_hamming_distance(first: &[u8], second: &[u8]) -> Result<u64> {
     assert_eq!(first.len(), second.len());
@@ -42,20 +43,29 @@ fn normalize_hamming_distance_on_slices(buffer: &[u8], keysize: usize) -> Result
     Ok(distance_sum as f64 / count)
 }
 
-struct RepeatingKeyXorBreaker {
+pub struct RepeatingKeyXorBreaker<Scorer: PatternScorer> {
     cipher_buffer: Vec<u8>,
+    scorer: Arc<Scorer>,
 }
 
-impl RepeatingKeyXorBreaker {
-    fn new(file_path: &str) -> Self {
+impl<Scorer: PatternScorer + Send + Sync + 'static> RepeatingKeyXorBreaker<Scorer>
+where Arc<Scorer>: PatternScorer {
+    pub fn new(cipher_buffer: &[u8]) -> Self {
+        Self {
+            cipher_buffer: cipher_buffer.to_owned(),
+            scorer: Arc::new(Scorer::new()),
+        }
+    }
+
+    fn new_from_file(file_path: &str) -> Self {
         let cipher_text = read_to_string(file_path).expect("Unable to read file.");
 
         let cipher_buffer: Vec<_> = cipher_text
             .split('\n')
-            .flat_map(|l| base64::decode(l).expect("Not valid base64."))
+            .flat_map(|l| l.decode_base64().into_bytes())
             .collect();
 
-        Self { cipher_buffer }
+        Self { cipher_buffer, scorer: Arc::new(Scorer::new()) }
     }
 
     fn get_smallest_average_keysize(&self) -> Option<usize> {
@@ -69,10 +79,10 @@ impl RepeatingKeyXorBreaker {
     }
 
     fn get_transposed_blocks(&self) -> Vec<String> {
-        let keysize = self
+        /*let keysize = self
             .get_smallest_average_keysize()
-            .expect("Key size could not be found.");
-        println!("Keysize is: {:?}", keysize);
+            .expect("Key size could not be found.");*/
+        let keysize = 53; // TODO
 
         let blocks = self.get_blocks(keysize);
 
@@ -95,20 +105,22 @@ impl RepeatingKeyXorBreaker {
         transposed_blocks
     }
 
-    fn break_blocks(&self) -> String {
+    pub fn break_blocks(&self) -> Vec<u8> {
         let (tx, rx) = channel();
         let pool = ThreadPool::new(8);
 
-        let dict = Arc::new(WordScorer::new());
         let blocks = self.get_transposed_blocks();
         let blocks_num = blocks.len();
+        //println!("Blocks num: {:?}", blocks_num);
 
         for (i, block) in blocks.into_iter().enumerate() {
-            let dict = dict.clone();
+            let scorer = self.scorer.clone();
             let tx = tx.clone();
 
             pool.execute(move || {
-                let deciphered = break_cipher(dict, &block);
+                let deciphered = break_cipher(scorer, &block);
+
+                println!("Deciphered: {:?}", deciphered);
 
                 tx.send((i, deciphered)).expect("Unable to send wtf");
             });
@@ -118,17 +130,19 @@ impl RepeatingKeyXorBreaker {
             .take(blocks_num)
             .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
             .map(|k| k.1.unwrap().key)
-            .collect::<String>()
+            .collect::<Vec<_>>()
     }
 
-    fn decrypt(&self, key: &str) -> String {
-        let xored_bytes = &self.cipher_buffer.xor_repeating_key(key.as_bytes());
+    fn decrypt(&self, key: &[u8]) -> String {
+        let xored_bytes = &self.cipher_buffer.xor_repeating_key(key);
 
         String::from_utf8_lossy(xored_bytes).into_owned()
     }
 
-    fn break_it(&self) -> String {
+    pub fn break_it(&self) -> String {
         let key = self.break_blocks();
+
+        println!("Keysize: {:?}", key.len());
 
         self.decrypt(&key)
     }
@@ -137,6 +151,7 @@ impl RepeatingKeyXorBreaker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::challenges::set1::challenge3::DictionaryScorer;
 
     #[test]
     fn test_challenge6_hamming_distance() {
@@ -175,14 +190,14 @@ mod tests {
 
     #[test]
     fn test_challenge6_smallest_normalized_distance() {
-        let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
+        let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
 
         assert_eq!(breaker.get_smallest_average_keysize(), Some(29));
     }
 
     #[test]
     fn test_challenge6_get_transposed_blocks() {
-        let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
+        let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
 
         let _transposed_blocks = breaker.get_transposed_blocks();
         // TODO: write a test of something i dno
@@ -191,14 +206,14 @@ mod tests {
 
     #[test]
     fn test_challenge6_break_blocks() {
-        let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
-        assert_eq!(breaker.break_blocks(), "Terminator X: Bring the noise");
+        let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
+        assert_eq!(breaker.break_blocks(), "Terminator X: Bring the noise".as_bytes());
     }
 
     #[test]
     fn test_challenge6_decrypt() {
-        let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
-        let plaintext = breaker.decrypt("Terminator X: Bring the noise");
+        let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
+        let plaintext = breaker.decrypt("Terminator X: Bring the noise".as_bytes());
 
         println!("{:?}", plaintext);
         assert_eq!(&plaintext[..33], "I'm back and I'm ringin' the bell");
@@ -206,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_challenge6_break() {
-        let breaker = RepeatingKeyXorBreaker::new("data/6.txt");
+        let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
         let plaintext = breaker.break_it();
 
         println!("{:?}", plaintext);

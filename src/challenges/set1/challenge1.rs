@@ -3,9 +3,11 @@
 
 use anyhow::Result;
 
+use crate::utils::{Base64, UnicodeUtils};
+
 fn hex_to_base64(arg: &str) -> Result<String> {
     let hex = hex::decode(arg)?;
-    Ok(base64::encode(hex))
+    Ok(hex.encode_base64().to_string())
 }
 
 #[cfg(test)]

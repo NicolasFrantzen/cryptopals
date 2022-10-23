@@ -110,7 +110,7 @@ impl AesEncryption for Aes128Ecb {
     }
 }
 
-struct CtrCounter {
+pub struct CtrCounter {
     nonce: u64,
 }
 
@@ -119,7 +119,7 @@ impl CtrCounter {
         Self { nonce }
     }
 
-    fn iter(&self) -> CtrCounterIter {
+    pub fn iter(&self) -> CtrCounterIter {
         CtrCounterIter {
             count: 0,
             nonce: self.nonce,
@@ -127,7 +127,7 @@ impl CtrCounter {
     }
 }
 
-struct CtrCounterIter {
+pub struct CtrCounterIter {
     count: u64,
     nonce: u64,
 }
@@ -156,7 +156,7 @@ impl Aes128Ctr {
         buffer
             .chunks(AES_BLOCK_SIZE)
             .zip(CtrCounter::new(0).iter())
-            .flat_map(|(x, y)| x.xor_all(&Aes128Ecb::encrypt(&y, key, None)))
+            .flat_map(|(x, y)| x.xor_all(Aes128Ecb::encrypt(&y, key, None).as_slice()))
             .collect::<Vec<_>>()
     }
 }
