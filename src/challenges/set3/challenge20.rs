@@ -70,9 +70,9 @@ mod tests {
 
         let concatenated_ciphers = encrypted_bytes_vec
             .iter()
-            .map(|x| xor_with_keystream(&x))
+            .map(|x| xor_with_keystream(x))
             //.inspect(|PlainText(x)| println!("HEJ: {:?}", x.len()))
-            .flat_map(|x| (&x.0[..min_len]).to_vec())
+            .flat_map(|x| x.0[..min_len].to_vec())
             .collect::<Vec<u8>>();
 
         let breaker = RepeatingKeyXorBreaker::<FrequencyScorer>::new(&concatenated_ciphers); // TODO: Break with size specified?

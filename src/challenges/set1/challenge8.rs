@@ -1,20 +1,16 @@
 //! Detect AES in ECB mode
 //! <https://cryptopals.com/sets/1/challenges/8>
 
-use crate::{aes::AES_BLOCK_SIZE, utils::read_lines_from_file};
+use crate::{aes::AES_BLOCK_SIZE, utils::{read_lines_from_file, UnicodeUtils}};
 use crate::detect::DetectReps;
 
 fn detect_ecb_in_ciphertext(file_path: &str) -> Option<String> {
-    for cipher_text in read_lines_from_file(file_path) {
-        if hex::decode(&cipher_text)
-            .ok()?
-            .detect_repetitions(AES_BLOCK_SIZE)
-        {
-            return Some(cipher_text);
-        }
-    }
-
-    None
+    read_lines_from_file(file_path).into_iter()
+        .filter_map(|cipher_line| hex::decode(&cipher_line)
+            .ok()
+            .map(|x| x.to_string()))
+        .find(|x| x.as_bytes()
+            .detect_repetitions(AES_BLOCK_SIZE))
 }
 
 #[cfg(test)]
