@@ -6,4 +6,5 @@ mod datatypes;
 mod detect;
 mod oracle;
 mod padding;
+mod random;
 mod utils;
