@@ -23,10 +23,10 @@ fn normalize_hamming_distance(first: &[u8], second: &[u8]) -> Result<u64> {
     Ok(normalized_hamming_distance)
 }
 
-fn normalize_hamming_distance_on_slices(buffer: &[u8], keysize: usize) -> Result<f64> {
+fn normalize_hamming_distance_on_slices(buffer: &[u8], key_size: usize) -> Result<f64> {
     let mut slices: Vec<&[u8]> = vec![];
     for i in 0..4 {
-        let slice = &buffer[i * keysize..(i + 1) * keysize];
+        let slice = &buffer[i * key_size..(i + 1) * key_size];
         slices.push(slice);
     }
 
@@ -68,7 +68,7 @@ where Arc<Scorer>: PatternScorer {
         Self { cipher_buffer, scorer: Arc::new(Scorer::new()) }
     }
 
-    fn get_smallest_average_keysize(&self) -> Option<usize> {
+    fn get_smallest_average_key_size(&self) -> Option<usize> {
         (2..40).min_by_key(|i| {
             OrderedFloat(normalize_hamming_distance_on_slices(&self.cipher_buffer, *i).unwrap())
         })
@@ -78,16 +78,11 @@ where Arc<Scorer>: PatternScorer {
         self.cipher_buffer.chunks(size).collect::<Vec<&[u8]>>()
     }
 
-    fn get_transposed_blocks(&self) -> Vec<String> {
-        /*let keysize = self
-            .get_smallest_average_keysize()
-            .expect("Key size could not be found.");*/
-        let keysize = 53; // TODO
-
-        let blocks = self.get_blocks(keysize);
+    fn get_transposed_blocks_with_key_size(&self, key_size: usize) -> Vec<String> {
+        let blocks = self.get_blocks(key_size);
 
         let mut transposed_blocks: Vec<String> = vec![];
-        for i in 0..keysize {
+        for i in 0..key_size {
             let mut new_block: Vec<u8> = vec![];
 
             for block in blocks.iter() {
@@ -105,11 +100,11 @@ where Arc<Scorer>: PatternScorer {
         transposed_blocks
     }
 
-    pub fn break_blocks(&self) -> Vec<u8> {
+    pub fn break_blocks_with_key_size(&self, key_size: usize) -> Vec<u8> {
         let (tx, rx) = channel();
         let pool = ThreadPool::new(8);
 
-        let blocks = self.get_transposed_blocks();
+        let blocks = self.get_transposed_blocks_with_key_size(key_size);
         let blocks_num = blocks.len();
         //println!("Blocks num: {:?}", blocks_num);
 
@@ -139,11 +134,17 @@ where Arc<Scorer>: PatternScorer {
         String::from_utf8_lossy(xored_bytes).into_owned()
     }
 
-    pub fn break_it(&self) -> String {
-        let key = self.break_blocks();
+    pub fn break_xor(&self) -> String {
+        let key_size = self.get_smallest_average_key_size()
+            .expect("Key size could not be found.");
 
-        println!("Keysize: {:?}", key.len());
+        println!("key_size: {:?}", key_size);
 
+        self.break_xor_with_key_size(key_size)
+    }
+
+    pub fn break_xor_with_key_size(&self, key_size: usize) -> String {
+        let key = self.break_blocks_with_key_size(key_size);
         self.decrypt(&key)
     }
 }
@@ -192,14 +193,14 @@ mod tests {
     fn test_challenge6_smallest_normalized_distance() {
         let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
 
-        assert_eq!(breaker.get_smallest_average_keysize(), Some(29));
+        assert_eq!(breaker.get_smallest_average_key_size(), Some(29));
     }
 
     #[test]
     fn test_challenge6_get_transposed_blocks() {
         let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
 
-        let _transposed_blocks = breaker.get_transposed_blocks();
+        let _transposed_blocks = breaker.get_transposed_blocks_with_key_size(16);
         // TODO: write a test of something i dno
         //println!("{:?}", transposed_blocks);
     }
@@ -207,7 +208,7 @@ mod tests {
     #[test]
     fn test_challenge6_break_blocks() {
         let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
-        assert_eq!(breaker.break_blocks(), "Terminator X: Bring the noise".as_bytes());
+        assert_eq!(breaker.break_blocks_with_key_size(breaker.get_smallest_average_key_size().unwrap()), "Terminator X: Bring the noise".as_bytes());
     }
 
     #[test]
@@ -222,7 +223,7 @@ mod tests {
     #[test]
     fn test_challenge6_break() {
         let breaker = RepeatingKeyXorBreaker::<DictionaryScorer>::new_from_file("data/6.txt");
-        let plaintext = breaker.break_it();
+        let plaintext = breaker.break_xor();
 
         println!("{:?}", plaintext);
         assert_eq!(&plaintext[..33], "I'm back and I'm ringin' the bell");

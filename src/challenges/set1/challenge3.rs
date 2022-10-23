@@ -109,7 +109,7 @@ impl FrequencyScorer
     {
         let score = word.to_lowercase()
             .as_bytes()
-            .into_iter()
+            .iter()
             .fold(0, |acc, x| acc + Self::get_letter_score(x));
 
         println!("Get score: {word} => {score}");
@@ -239,7 +239,7 @@ fn decipher(cipher: &str, key: u8) -> Result<String> {
 pub fn break_cipher<T: PatternScorer>(dict: T, cipher: &str) -> Result<Deciphered> {
     let mut key_score = HashMap::new();
 
-    for c in 0..=255_u8
+    for c in 32..=255_u8 // Needed to be from 0 for challenge 19 and 20
     // All printable chars
     {
         if let Ok(deciphered) = decipher(cipher, c) {

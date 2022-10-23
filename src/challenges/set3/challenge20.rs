@@ -78,7 +78,7 @@ mod tests {
         let breaker = RepeatingKeyXorBreaker::<FrequencyScorer>::new(&concatenated_ciphers); // TODO: Break with size specified?
 
         println!("WAT: {:?}", concatenated_ciphers.len());
-        let key_break = breaker.break_it();
+        let key_break = breaker.break_xor_with_key_size(53);
 
         println!("Decipher: {:?}", key_break);
 
