@@ -1,12 +1,14 @@
 //! Implementation of MT19937 algorithm
 //! https://en.wikipedia.org/wiki/Mersenne_Twister#Pseudocode
 
+use rand_core::SeedableRng;
+
 pub const DEFAULT_SEED: u64 = 5489;
 
 // Constants for MT19937-64
 const W: u64 = 64;
 const N: usize = 312;
-const M: u64 = 156;
+const M: usize = 156;
 const R: u64 = 31;
 const A: u64 = 0xB502_6F5A_A966_19E9;
 const U: u64 = 29;
@@ -20,14 +22,7 @@ const F: u128 = 6364136223846793005;
 
 const LOWEST_W_MASK: u128 = 0xFFFF_FFFF_FFFF_FFFF;
 const LOWER_MASK: u64 = (1 << R) - 1; // The binary number of r 1's
-const UPPER_MASK: u64 = (LOWER_MASK as u128 & LOWEST_W_MASK) as u64; // lowest W bits of LOWER_MASK
-
-
-pub trait RandomNumberGenerator {
-    type ReturnType;
-    fn seed(&self, seed: usize);
-    fn rand(&self) -> Self::ReturnType;
-}
+const UPPER_MASK: u64 = ((!LOWER_MASK as u128) & LOWEST_W_MASK) as u64; // lowest W bits of LOWER_MASK
 
 pub struct MT19937_64
 {
@@ -54,14 +49,14 @@ impl MT19937_64 {
     fn twist(&mut self) {
         for i in 0..N-1 {
             let x = (self.mt[i] & UPPER_MASK)
-                | (self.mt[(i+1) % N] & LOWER_MASK);
+                | (self.mt[(i + 1) % N] & LOWER_MASK);
 
             let mut x_a = x >> 1;
 
             if x % 2 != 0 {
                 x_a ^= A;
             }
-            self.mt[i] = self.mt[(i + (M as usize)) % N] ^ x_a;
+            self.mt[i] = self.mt[(i + M) % N] ^ x_a;
         }
 
         self.index = 0;
@@ -71,29 +66,35 @@ impl MT19937_64 {
         self.index = N;
         self.mt[0] = seed;
 
-        (1..N-1).for_each(|i| {
-            self.mt[i] = (LOWEST_W_MASK as u128 & (F * (self.mt[i-1] as u128 ^ (self.mt[i-1] as u128 >> (W - 2))))) as u64;
-        });
+        for i in 1..N-1 {
+            self.mt[i] = (LOWEST_W_MASK as u128 &
+                (
+                    (F * (self.mt[i-1] ^ (self.mt[i-1] >> (W - 2))) as u128) + (i as u128)
+                )) as u64;
+        }
     }
 
     fn extract_number(&mut self) -> u64 {
+        debug_assert!(self.index != 0);
+
         if self.index >= N {
             if self.index > N {
-                self.seed_mt(DEFAULT_SEED);
+                //self.seed_mt(DEFAULT_SEED);
+                panic!("FUCK");
             }
 
             self.twist();
         }
 
         let mut y: u64 = self.mt[self.index];
-        y = y ^ ((y >> U) & D);
-        y = y ^ ((y << S) & B);
-        y = y ^ ((y << T) & C);
-        y = y ^ (y >> L);
+        y ^= (y >> U) & D;
+        y ^= (y << S) & B;
+        y ^= (y << T) & C;
+        y ^= y >> L;
 
         self.index += 1;
 
-        (y as u128 & LOWEST_W_MASK) as u64
+        y // & LOWEST_W_MASK
     }
 
     pub fn next_u64(&mut self) -> u64 {
@@ -101,15 +102,10 @@ impl MT19937_64 {
     }
 }
 
-impl RandomNumberGenerator for MT19937_64 {
-    type ReturnType = u64;
-
-    fn rand(&self) -> Self::ReturnType {
-        todo!()
-    }
-
-    fn seed(&self, _seed: usize) {
-        todo!()
+impl SeedableRng for MT19937_64 {
+    type Seed = [u8; 8];
+    fn from_seed(seed: Self::Seed) -> Self {
+        Self::from_seed(u64::from_le_bytes(seed))
     }
 }
 
@@ -117,19 +113,15 @@ impl RandomNumberGenerator for MT19937_64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand_mt::Mt64;
 
     #[ignore]
     #[test]
     fn test_compare() {
         let seed = DEFAULT_SEED;
-        let mut a = Mt64::new(seed);
+        let mut rng = MT19937_64::from_seed(seed);
 
-        let mut b = MT19937_64::from_seed(seed);
-
-        a.next_u64();
-        b.next_u64();
-
-        assert_eq!(a.next_u64(), b.next_u64());
+        assert_eq!(rng.next_u64(), 14514284786278117030);
+        assert_eq!(rng.next_u64(), 4620546740167642908);
+        assert_eq!(rng.next_u64(), 13109570281517897720);
     }
 }
