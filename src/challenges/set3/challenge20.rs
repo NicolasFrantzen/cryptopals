@@ -29,7 +29,7 @@ mod tests {
     use crate::utils::{Base64, generate_random_bytes, read_lines_from_file};
     use crate::aes::{Aes128, AES_BLOCK_SIZE};
 
-    use crate::challenges::set1::challenge3::{FrequencyScorer};
+    use crate::challenges::set1::challenge3::FrequencyScorer;
     use crate::challenges::set1::challenge6::RepeatingKeyXorBreaker;
 
     use super::*;
