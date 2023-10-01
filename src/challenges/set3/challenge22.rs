@@ -1,7 +1,7 @@
 //! Crack an MT19937 seed
 //! <https://cryptopals.com/sets/3/challenges/22>
 
-use crate::random::MT19937_64;
+use crate::mersenne_twister::MT19937_64;
 
 use std::{thread, time::{Duration, SystemTime}};
 use rand::{thread_rng, Rng};
