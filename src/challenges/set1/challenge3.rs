@@ -102,7 +102,7 @@ impl FrequencyScorer
             .split(' ')
             .fold(0, |acc, x| acc + Self::get_word_score(x));
 
-        Ok(score as u16)
+        Ok(score)
     }
 
     fn get_word_score(word: &str) -> u16
@@ -261,7 +261,7 @@ pub fn break_cipher<T: PatternScorer>(dict: T, cipher: &str) -> Result<Deciphere
     if let Some(max_score_key) = max_score_key {
         let max_score = key_score[&max_score_key];
 
-        if let Ok(deciphered_msg) = decipher(cipher, max_score_key as u8) {
+        if let Ok(deciphered_msg) = decipher(cipher, max_score_key) {
             if max_score > 0 {
                 println!("Key became: {:?}, {}", max_score_key, max_score);
 

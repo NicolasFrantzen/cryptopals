@@ -23,13 +23,7 @@ fn exploit() -> Option<u64> {
 
     let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
-    for seed in (current_time-2000)..current_time {
-        if MT19937_64::from_seed(seed).next_u64() == random_int {
-            return Some(seed);
-        }
-    }
-
-    None
+    ((current_time-2000)..current_time).find(|&seed| MT19937_64::from_seed(seed).next_u64() == random_int)
 }
 
 #[cfg(test)]

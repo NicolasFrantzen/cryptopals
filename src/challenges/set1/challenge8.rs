@@ -6,7 +6,7 @@ use crate::detect::DetectReps;
 
 fn detect_ecb_in_ciphertext(file_path: &str) -> Option<String> {
     read_lines_from_file(file_path).into_iter()
-        .find(|x| hex::decode(&x).map(|x| x.detect_repetitions(AES_BLOCK_SIZE)).unwrap_or(false))
+        .find(|x| hex::decode(x).map(|x| x.detect_repetitions(AES_BLOCK_SIZE)).unwrap_or(false))
 }
 
 #[cfg(test)]

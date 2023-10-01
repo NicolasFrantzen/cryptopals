@@ -67,7 +67,7 @@ impl MT19937_64 {
         self.mt[0] = seed;
 
         for i in 1..N-1 {
-            self.mt[i] = (LOWEST_W_MASK as u128 &
+            self.mt[i] = (LOWEST_W_MASK &
                 (
                     (F * (self.mt[i-1] ^ (self.mt[i-1] >> (W - 2))) as u128) + (i as u128)
                 )) as u64;
