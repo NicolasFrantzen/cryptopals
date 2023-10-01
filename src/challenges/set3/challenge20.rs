@@ -3,15 +3,14 @@
 
 use crate::aes::{CtrCounter, AES_BLOCK_SIZE};
 use crate::utils::UnicodeUtils;
+use crate::datatypes::Plain;
 
-#[derive(PartialEq, Debug)]
-struct PlainText(Vec<u8>);
 
 /// XOR with keystream
 /// `CIPHERTEXT-BYTE XOR PLAINTEXT-BYTE = KEYSTREAM-BYTE`
 /// So that,
 /// `CIPHERTEXT-BYTE XOR KEYSTREAM-BYTE = PLAINTEXT-BYTE`
-fn xor_with_keystream(cipher_buffer: &[u8]) -> PlainText
+fn xor_with_keystream(cipher_buffer: &[u8]) -> Plain
 {
     let keystream = CtrCounter::new(0);
     let plaintext = cipher_buffer
@@ -20,7 +19,7 @@ fn xor_with_keystream(cipher_buffer: &[u8]) -> PlainText
         .flat_map(|(x, y)| x.xor_all(&y))
         .collect::<Vec<_>>();
 
-    PlainText(plaintext)
+    Plain(plaintext)
 }
 
 
@@ -36,9 +35,8 @@ mod tests {
 
     #[test]
     fn test_challenge20_xor_with_keystream() {
-
         let xored_key_stream = xor_with_keystream(&[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
-        assert_eq!(xored_key_stream, PlainText([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1].to_vec()));
+        assert_eq!(xored_key_stream, Plain([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1].to_vec()));
     }
 
     #[test]

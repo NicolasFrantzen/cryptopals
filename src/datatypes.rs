@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq)]
-pub(crate) struct Key(Vec<u8>);
+pub struct Key(pub Vec<u8>);
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Cipher(Vec<u8>);
+pub struct Cipher(pub Vec<u8>);
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Plain(Vec<u8>);
+pub struct Plain(pub Vec<u8>);
