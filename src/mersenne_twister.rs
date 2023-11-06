@@ -3,22 +3,22 @@
 
 use rand_core::SeedableRng;
 
-pub const DEFAULT_SEED: u64 = 5489;
+pub(crate) const DEFAULT_SEED: u64 = 5489;
 
 // Constants for MT19937-64
-const W: u64 = 64;
-const N: usize = 312;
-const M: usize = 156;
-const R: u64 = 31;
-const A: u64 = 0xB502_6F5A_A966_19E9;
-const U: u64 = 29;
-const D: u64 = 0x5555_5555_5555_5555;
-const S: u64 = 17;
-const B: u64 = 0x71D6_7FFF_EDA6_0000;
-const T: u64 = 37;
-const C: u64 = 0xFFF7_EEE0_0000_0000;
-const L: u64 = 43;
-const F: u128 = 6364136223846793005;
+pub(crate) const W: u64 = 64;
+pub(crate) const N: usize = 312;
+pub(crate) const M: usize = 156;
+pub(crate) const R: u64 = 31;
+pub(crate) const A: u64 = 0xB502_6F5A_A966_19E9;
+pub(crate) const U: u64 = 29;
+pub(crate) const D: u64 = 0x5555_5555_5555_5555;
+pub(crate) const S: u64 = 17;
+pub(crate) const B: u64 = 0x71D6_7FFF_EDA6_0000;
+pub(crate) const T: u64 = 37;
+pub(crate) const C: u64 = 0xFFF7_EEE0_0000_0000;
+pub(crate) const L: u64 = 43;
+pub(crate) const F: u128 = 6364136223846793005;
 
 const LOWEST_W_MASK: u128 = 0xFFFF_FFFF_FFFF_FFFF;
 const LOWER_MASK: u64 = (1 << R) - 1; // The binary number of r 1's
@@ -31,10 +31,13 @@ pub struct MT19937_64
 }
 
 impl MT19937_64 {
-    fn new() -> Self
-    {
+    pub fn new() -> Self {
+        Self::new_with_state([0; N])
+    }
+
+    pub fn new_with_state(mt: [u64; N]) -> Self {
         Self {
-            mt: [0; N],
+            mt,
             index: N+1,
         }
     }
@@ -79,8 +82,7 @@ impl MT19937_64 {
 
         if self.index >= N {
             if self.index > N {
-                //self.seed_mt(DEFAULT_SEED);
-                panic!("FUCK");
+                self.seed_mt(DEFAULT_SEED);
             }
 
             self.twist();
